@@ -1,0 +1,15 @@
+# DSH execution adapter
+
+This package loads the official DeepSeek Harness kernel packages at **0.2.0-rc.2** (Cordis 4.0.4). Install with `pnpm --dir harness install --frozen-lockfile`; Node 24 is required. The lockfile is part of the runtime version. No Python runtime is used.
+
+`runner.mjs` composes DSH's AgentRegistry, AgentLoop, ToolRuntime, SessionStore, SystemPrompt, TokenMeter and BasicCompactionEngine. Its provider adapter translates DSH messages to the platform's recorded OpenAI-compatible transport. DSH decides subsequent model requests and tool dispatch. The Go supervisor handles leases, secrets, actual model HTTP, ToolHub calls and durable receipts. This is the official kernel's programmatic API, **not** the separately published SDK client, the full interactive DSH CLI, or a reimplementation of its loop.
+
+Each run owns a Node subprocess. Only snapshotted platform tool definitions are registered. Host shell, filesystem, dynamic plugin loading and DSH telemetry plugins are not mounted. Subagents are platform child runs using the same DSH kernel, allowing workers to yield while waiting. This process isolation is not a sandbox for untrusted code; executable tools still use the separate sandbox service.
+
+Newline-delimited bridge messages are internal to Agent OS, not the official SDK JSON-RPC protocol. Each model/tool/finish exchange has a monotone sequence, a semantic input hash and a committed response. Restart reconstructs the DSH session by replaying those responses. Drift stops execution; a missing effect receipt never proves the operation did not happen. The evidence-v1 engine retains each newly emitted event batch through a transactional staging row, immutable Storage segments and a linked manifest before external work; historical engines keep their original full-prefix protocol. No private DSH JSONL format or independent local session writer is used. See [evidence storage and compatibility](https://github.com/euler-gaozl/agent-os/blob/752c9081f05733365f46594bd7581ec55b4ad875/docs/architecture/storage-evidence-v1.md).
+
+Compaction remains DSH-owned. The supported `summarize` hook replaces the coding-specific default summary directive with a task-neutral continuity checkpoint. Original evidence remains in the event artifacts; current constraints are separately applied to each new model request. Agents explicitly bound to `run_recall` can rediscover this run's or descendants' tool receipts and event manifests even if summaries omit source identifiers. Summarization quality still requires real-model evaluation. Incremental transport does not make the upstream in-memory event history bounded; the process and model budgets still apply.
+
+Upgrading DSH or changing replay-visible adapter behavior requires a compatibility plan for unfinished runs and the replay/fault tests. Do not silently change pinned packages for an active run.
+
+Sources: [official repository](https://github.com/deepseek-ai/deepseek-harness), [official architecture reference](https://deepseek-harness.github.io/deepseek-harness/reference/). DSH dependencies retain their upstream MIT license.

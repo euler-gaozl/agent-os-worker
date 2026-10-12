@@ -1,0 +1,6 @@
+/bin/
+/.local/
+*.log
+*.exe
+/node_modules/
+/harness/node_modules/

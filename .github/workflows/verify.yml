@@ -1,0 +1,44 @@
+name: Independent Worker verification
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      GOWORK: "off"
+      GOPROXY: "off"
+      AGENTOS_REQUIRE_DSH: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.27.2
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+      - run: npm install --global pnpm@11.25.0
+      - run: pnpm --dir harness install --frozen-lockfile --ignore-scripts --prod
+      - run: node --test harness/session-seams.test.mjs
+      - run: go vet -mod=vendor ./...
+      - shell: pwsh
+        run: ./scripts/Verify-Ownership.ps1
+      - if: runner.os == 'Linux'
+        run: go test -mod=vendor -race -count=1 -timeout=3m ./...
+      - if: runner.os == 'Windows'
+        run: go test -mod=vendor -count=1 -timeout=3m ./...
+      - shell: pwsh
+        run: ./scripts/Package-Worker.ps1 -Destination (Join-Path $env:RUNNER_TEMP 'worker-release')
+      - shell: pwsh
+        run: ./scripts/Test-RelocatedPackage.ps1 -Package (Join-Path $env:RUNNER_TEMP 'worker-release')
+      - if: runner.os == 'Linux'
+        run: docker build -t agent-os-worker:ci .
