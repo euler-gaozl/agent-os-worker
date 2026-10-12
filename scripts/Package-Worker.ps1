@@ -56,13 +56,14 @@ Copy-Item -LiteralPath (Join-Path $root 'deploy/release-contract.json') -Destina
 Copy-Item -LiteralPath (Join-Path $root 'source-provenance.json') -Destination $target
 & (Join-Path $nodeDirectory $nodeName) --test (Join-Path $harness 'session-seams.test.mjs')
 if($LASTEXITCODE){throw 'Packaged Node and Harness interface checks failed.'}
-$links=@(Get-ChildItem -LiteralPath $target -Recurse -Force | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint })
-if($links.Count){throw 'Portable package contains filesystem links; refuse to publish it.'}
-# Hash the complete runtime, including the materialized, link-free dependencies.
+. (Join-Path $PSScriptRoot 'package-files.ps1')
+$links=@(Get-PortablePackageLinks $target)
+# Hash all installed files. Unix relative file links are also recorded by target;
+# Windows directory junctions and all absolute/escaping links are prohibited.
 $files=@(Get-ChildItem -LiteralPath $target -Recurse -File | Sort-Object FullName | ForEach-Object {
  @{path=[IO.Path]::GetRelativePath($target,$_.FullName).Replace('\','/');sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
 })
-$manifest=@{format=1;role='worker';source_commit=$commit;node_version=$version;pnpm_version=$pnpmVersion;dependency_layout='hoisted-link-free';offline=[bool]$Offline;files=$files;created_at=[datetime]::UtcNow.ToString('o')}
+$manifest=@{format=1;role='worker';source_commit=$commit;node_version=$version;pnpm_version=$pnpmVersion;dependency_layout='hoisted-contained';links=$links;offline=[bool]$Offline;files=$files;created_at=[datetime]::UtcNow.ToString('o')}
 if(@(& git -C $root status --porcelain).Count -or (& git -C $root rev-parse HEAD).Trim() -cne $commit){throw 'Source changed during packaging.'}
 $manifest|ConvertTo-Json -Depth 6|Set-Content -LiteralPath (Join-Path $target 'package.json')
 Write-Output ('Complete Worker package: '+$target)
