@@ -33,6 +33,23 @@ live deployment. GitHub Actions remain disabled.
 
 ## Build and verify
 
+`worker --execution-access-profile` reports the compiled `worker-minimal-v1`
+SQL requirement and exits before loading configuration, opening connections or
+starting Node. Only that exact single argument is handled. The release contract
+records the same profile; this is a compatibility claim, not a database grant or
+proof that a deployment is ready. The Windows coordinator checks the actual
+binary, bound Runtime/Worker database and effective login permissions before
+startup, update, rollback and pending recovery. Missing metadata is treated as a
+legacy requirement; malformed metadata or a different binary report is refused.
+The existing engines, pinned Harness assets and execution module are unchanged.
+
+Local candidate evidence `execution-access-build-1e387f7fc44c40e094e2ce0491f0ada7`
+records both entrypoint tests, vet and executable build; the actual binary report
+was exercised by 44 PostgreSQL/release checks in
+`execution-access-release-fdce72a63e154c74a34c70f8caf37a2a`.
+Formal activation and permission contraction are separate steps; no model or CI
+calls were made for this addition.
+
 Use Go 1.27.2, PowerShell 7, Node 24 and pnpm 11.25.0. The committed vendor directory contains canonical fixed modules; no neighboring checkout, local `replace`, private credentials or network access is needed for Go builds.
 
 ```powershell

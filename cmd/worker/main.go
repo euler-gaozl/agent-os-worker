@@ -22,6 +22,9 @@ func (a artifactWriter) PutArtifact(ctx context.Context, b []byte, media, root s
 	return a.client.PutArtifact(ctx, a.url, b, media, root)
 }
 func main() {
+	if reportExecutionAccess(os.Args[1:], os.Stdout) {
+		return
+	}
 	servicehost.Main(servicehost.Options{Role: "worker", Port: "0", Database: true, Concurrency: 16, Authorize: worker.Authorize, Readiness: execution.Readiness}, func(ctx context.Context, db *pgxpool.Pool, c servicehttp.Config) (http.Handler, func(context.Context) error, error) {
 		if e := applyLocalDefaults(); e != nil {
 			return nil, nil, e

@@ -1,6 +1,7 @@
 {
   "format": 1,
   "role": "worker",
+  "execution_access": {"format": 1, "profile": "worker-minimal-v1"},
   "schema": "public",
   "migration_owner": "runtime",
   "backward_compatible": true,
