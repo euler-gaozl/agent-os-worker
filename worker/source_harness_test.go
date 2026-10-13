@@ -14,22 +14,35 @@ import (
 )
 
 func sourceArtifact(t *testing.T) string {
+	return sourceArtifactVersion(t, EngineDSHSource)
+}
+
+func sourceArtifactVersion(t *testing.T, version string) string {
 	t.Helper()
 	entry := os.Getenv("TEST_SOURCE_DSH_RUNNER")
+	if version == EngineDSHResident {
+		entry = os.Getenv("TEST_RESIDENT_DSH_RUNNER")
+	}
 	if entry == "" {
 		if os.Getenv("AGENTOS_REQUIRE_SOURCE") == "1" {
 			t.Fatal("pinned source artifact required")
 		}
 		t.Skip("source artifact not configured")
 	}
-	if _, err := VerifySourceHarness(entry); err != nil {
+	if _, err := verifySourceVersion(entry, version); err != nil {
 		t.Fatal(err)
 	}
 	return entry
 }
 
 func TestSourceArtifactCompiledPinRejectsTamper(t *testing.T) {
-	entry := sourceArtifact(t)
+	for _, version := range []string{EngineDSHSource, EngineDSHResident} {
+		t.Run(version, func(t *testing.T) { testSourceArtifactTamper(t, version) })
+	}
+}
+
+func testSourceArtifactTamper(t *testing.T, version string) {
+	entry := sourceArtifactVersion(t, version)
 	for _, bad := range []string{"source-runner.mjs", "dist/kernel.mjs", "dist/manifest.json", "dist/THIRD_PARTY_NOTICES.txt"} {
 		t.Run(bad, func(t *testing.T) {
 			root := t.TempDir()
@@ -48,22 +61,24 @@ func TestSourceArtifactCompiledPinRejectsTamper(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if _, err := VerifySourceHarness(filepath.Join(root, "source-runner.mjs")); err == nil {
+			if _, err := verifySourceVersion(filepath.Join(root, "source-runner.mjs"), version); err == nil {
 				t.Fatal("modified artifact accepted")
 			}
 		})
 	}
-	if _, err := VerifySourceHarness("source-runner.mjs"); err == nil {
+	if _, err := verifySourceVersion("source-runner.mjs", version); err == nil {
 		t.Fatal("relative artifact accepted")
 	}
 }
 
 func TestSourceEngineDoesNotFallBackToLegacyRunner(t *testing.T) {
-	r := providerRun("https://fixture.invalid")
-	r.Engine = EngineDSHSource
-	t.Setenv("DSH_RUNNER", "legacy-must-not-be-started.mjs")
-	if err := (&Worker{}).driveDSH(context.Background(), &r); err == nil || !strings.Contains(err.Error(), "not enabled") {
-		t.Fatal("source was not opt-in", err)
+	for _, version := range []string{EngineDSHSource, EngineDSHResident} {
+		r := providerRun("https://fixture.invalid")
+		r.Engine = version
+		t.Setenv("DSH_RUNNER", "legacy-must-not-be-started.mjs")
+		if err := (&Worker{}).driveDSH(context.Background(), &r); err == nil || !strings.Contains(err.Error(), "not enabled") {
+			t.Fatal("source was not opt-in", err)
+		}
 	}
 }
 
@@ -149,6 +164,12 @@ func TestSourceStateRetriesUncertainReplyWithSameInvocation(t *testing.T) {
 }
 
 func TestSourceBudgetCountsFinalConstraintsToolsAndOutputBeforeIntent(t *testing.T) {
+	for _, version := range []string{EngineDSHSource, EngineDSHResident} {
+		t.Run(version, func(t *testing.T) { testSourceBudget(t, version) })
+	}
+}
+
+func testSourceBudget(t *testing.T, version string) {
 	for _, part := range []string{"constraints", "tools", "output", "fits"} {
 		t.Run(part, func(t *testing.T) {
 			var calls atomic.Int32
@@ -157,7 +178,7 @@ func TestSourceBudgetCountsFinalConstraintsToolsAndOutputBeforeIntent(t *testing
 			ledger := &modelLedger{}
 			w := &Worker{Store: ledger, Secrets: &fixtureSecrets{}}
 			run := providerRun(server.URL)
-			run.Engine = EngineDSHSource
+			run.Engine = version
 			run.Snapshot.Agent.ContextTokens = 8192
 			messages := []Message{{Role: "user", Content: "data"}}
 			var tools []Tool

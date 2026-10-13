@@ -27,12 +27,8 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		node = "node"
 	}
 	entry := os.Getenv("DSH_RUNNER")
-	if r.Engine == EngineDSHSource {
-		if w.SourceHarness == nil {
-			return errors.New("source engine is not enabled")
-		}
-		// Recheck before every process; no silent replacement of active-run code.
-		verified, err := VerifySourceHarness(w.SourceHarness.entry)
+	if isSourceEngine(r.Engine) {
+		verified, err := w.sourceForEngine(r.Engine)
 		if err != nil {
 			return err
 		}
@@ -53,7 +49,7 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		return e
 	}
 	cmd := exec.CommandContext(ctx, node, "--max-old-space-size=192", entry)
-	if r.Engine == EngineDSHSource {
+	if isSourceEngine(r.Engine) {
 		cmd = exec.CommandContext(ctx, node, "--max-old-space-size=192", "--no-global-search-paths", entry)
 		cmd.Dir = filepath.Dir(entry)
 	}
@@ -84,11 +80,11 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		contextTokens = 32000
 	}
 	init := map[string]any{"type": "init", "run_id": r.ID, "task": r.Task, "system": SystemMessage(original).Content, "model": r.Snapshot.Agent.Model.Model, "context_tokens": contextTokens, "tools": defs}
-	if r.Engine == EngineDSHEvidence || r.Engine == EngineDSHSource {
+	if r.Engine == EngineDSHEvidence || isSourceEngine(r.Engine) {
 		init["evidence_protocol"] = 1
 	}
-	if r.Engine == EngineDSHSource {
-		init["engine"] = EngineDSHSource
+	if isSourceEngine(r.Engine) {
+		init["engine"] = r.Engine
 	}
 	if _, e = fmt.Fprintln(stdin, string(JSON(init))); e != nil {
 		return e
@@ -101,7 +97,7 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		if e = json.Unmarshal(scanner.Bytes(), &f); e != nil {
 			return fmt.Errorf("DSH protocol: %w", e)
 		}
-		if f.Method == "failed" && r.Engine != EngineDSHEvidence && r.Engine != EngineDSHSource {
+		if f.Method == "failed" && r.Engine != EngineDSHEvidence && !isSourceEngine(r.Engine) {
 			return fmt.Errorf("DSH failed: %s", f.Params)
 		}
 		if f.ID != expected {

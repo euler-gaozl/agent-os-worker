@@ -1,6 +1,35 @@
 # Agent OS Worker
 
-Independent scheduler, model transport and DSH subprocess host. Runtime owns execution persistence and migrations; the Worker consumes the fixed `runtime-execution-v1` facade from Runtime `v0.1.0-rc.2`. It does not import Runtime routes, tool effects or migrations. Extraction is based on integration commit `752c9081f05733365f46594bd7581ec55b4ad875`.
+Independent scheduler, model transport and DSH subprocess host. Runtime owns execution persistence and migrations; the Worker consumes the fixed `runtime-execution-v1` facade from Runtime `v0.1.0-rc.3`. It does not import Runtime routes, tool effects or migrations. Extraction is based on integration commit `752c9081f05733365f46594bd7581ec55b4ad875`.
+
+## Resident-v2 candidate (not activated)
+
+`DSH_SOURCE_RUNNER` still enables only the original source state-v1 artifact.
+`DSH_RESIDENT_RUNNER` separately enables resident-v2. Each has an independent
+compiled manifest pin, verified before enabling claims and again before every
+Node launch. Verified handles carry their engine identity; a missing artifact,
+swapped handle, mismatched pin or changed file is rejected without version
+fallback. Both variants use the final provider-body budget check and the same
+Runtime-owned archive/state/receipt protocol. Existing tasks keep their engine.
+
+`Package-Worker.ps1 -SourceArtifact <v1-root> -ResidentArtifact <v2-root>` includes
+both verified artifacts under separate `source-harness` and `resident-harness`
+directories. Either option can be omitted; omitted versions must not be enabled
+in deployment configuration. Resident-v2 requires a Runtime that explicitly
+lists that version, plus matching integration release and rollback guards.
+The source-state HTTP name alone is insufficient to prove v2 support.
+
+Local development evidence: 53 Worker test records passed with zero skips;
+seven actual Windows Worker/Node tests using restricted PostgreSQL and Runtime
+HTTP passed, including committed-state interruption, lost HTTP replies and safe
+operator recovery for both source versions. A v1 task started by the old
+`70d45cd` Worker was interrupted after commit and completed by the new Worker
+without repeating committed model/tool/state effects. Provider, ToolHub routing
+and immutable Storage are fixtures, not paid provider/durability acceptance.
+Evidence is `p25-worker-resident-unit-b847ca3ea20c4d378c241b948badb6e2` and
+`p25-worker-resident-6a61fe5d1e7f4e9ebf2c71de2f2eaf36`. Package relocation and
+production activation are separate gates; this candidate has not changed the
+live deployment. GitHub Actions remain disabled.
 
 ## Build and verify
 

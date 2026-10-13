@@ -47,7 +47,7 @@ func (w *Worker) CompleteModel(ctx context.Context, r Run, id string, messages [
 		return Message{}, e
 	}
 	request := ModelRequest(cfg, messages, tools)
-	if r.Engine == EngineDSHSource {
+	if isSourceEngine(r.Engine) {
 		// This is the final serialized provider body, after Runtime has frozen
 		// current constraints and child results and applied the output cap.
 		// Use the pinned DSH UTF-16 chars/4 heuristic on the complete JSON body,
