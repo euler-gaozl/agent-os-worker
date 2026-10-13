@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"unicode/utf16"
 )
 
 type Completion struct {
@@ -46,6 +47,24 @@ func (w *Worker) CompleteModel(ctx context.Context, r Run, id string, messages [
 		return Message{}, e
 	}
 	request := ModelRequest(cfg, messages, tools)
+	if r.Engine == EngineDSHSource {
+		// This is the final serialized provider body, after Runtime has frozen
+		// current constraints and child results and applied the output cap.
+		// Use the pinned DSH UTF-16 chars/4 heuristic on the complete JSON body,
+		// plus framing headroom. This is not the provider's exact tokenizer and
+		// cannot guarantee actual token fit, particularly for non-English text.
+		window := r.Snapshot.Agent.ContextTokens
+		if window == 0 {
+			window = 32000
+		}
+		characters := 0
+		for _, char := range string(request) {
+			characters += utf16.RuneLen(char)
+		}
+		if window < 8192 || window > 1000000 || cfg.MaxTokens <= 0 || (characters+3)/4+cfg.MaxTokens+512 > window {
+			return Message{}, errors.New("source final provider estimated context budget exceeded or invalid")
+		}
+	}
 	attempt, cached, e := w.Store.BeginModel(ctx, r, id, request)
 	if e != nil {
 		return Message{}, e

@@ -25,5 +25,12 @@
     ]
   },
   "execution_protocol": "runtime-execution-v1",
-  "rollback_permission_condition": "Keep legacy Runtime-table SELECT grants for the old monorepo Worker readiness probe; fresh minimum roles are new-binary-only."
+  "rollback_permission_condition": "Keep legacy Runtime-table SELECT grants for the old monorepo Worker readiness probe; fresh minimum roles are new-binary-only.",
+  "source_engine_candidate": "dsh-source-639ed015-state-v1",
+  "source_activation_condition": "Pinned source artifact explicitly configured; Runtime source-state HTTP and working-state migration required. Public submission/activation acceptance separate.",
+  "source_required_contract": {
+    "data": "execution-v0.7-working-state",
+    "http": "agentos-http-v0.7-source-state-v1",
+    "source_management_protocol": "source-state-recovery-v1"
+  }
 }

@@ -10,14 +10,16 @@ import (
 )
 
 type Worker struct {
-	Store      Persistence
-	Archives   execution.ArtifactWriter
-	Secrets    SecretReader
-	ID         string
-	Lease      time.Duration
-	ToolHubURL string
-	Token      string
-	Poll       time.Duration
+	Store         Persistence
+	Archives      execution.ArtifactWriter
+	Secrets       SecretReader
+	ID            string
+	Lease         time.Duration
+	ToolHubURL    string
+	RuntimeURL    string
+	SourceHarness *SourceHarness
+	Token         string
+	Poll          time.Duration
 }
 
 func (w *Worker) Run(ctx context.Context) error {
@@ -71,7 +73,7 @@ func (w *Worker) execute(parent context.Context, r Run) {
 	var err error
 	if r.Engine == "legacy-go" {
 		err = w.drive(ctx, &r)
-	} else if r.Engine == "dsh-0.2.0-rc.2" || r.Engine == EngineDSHEvidence {
+	} else if r.Engine == "dsh-0.2.0-rc.2" || r.Engine == EngineDSHEvidence || r.Engine == EngineDSHSource {
 		err = w.driveDSH(ctx, &r)
 	} else {
 		err = errors.New("unsupported execution engine version")

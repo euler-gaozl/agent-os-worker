@@ -22,3 +22,4 @@ type Persistence interface {
 }
 
 var _ Persistence = (*execution.Engine)(nil)
+var _ execution.SourceEffects = (*Worker)(nil)

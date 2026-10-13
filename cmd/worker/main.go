@@ -28,7 +28,17 @@ func main() {
 		}
 		client := servicehost.Client()
 		archives := artifactWriter{client, os.Getenv("STORAGE_URL")}
-		w := &worker.Worker{Store: execution.New(db, archives), Archives: archives, Secrets: client, ID: servicehost.Env("INSTANCE_ID", "worker-"+contracts.ID()[:8]), Token: c.Token, ToolHubURL: client.CatalogURL}
+		store := execution.New(db, archives)
+		var source *worker.SourceHarness
+		if entry := os.Getenv("DSH_SOURCE_RUNNER"); entry != "" {
+			var err error
+			source, err = worker.VerifySourceHarness(entry)
+			if err != nil {
+				return nil, nil, err
+			}
+			store = execution.NewSourceEnabled(db, archives)
+		}
+		w := &worker.Worker{Store: store, SourceHarness: source, RuntimeURL: os.Getenv("RUNTIME_URL"), Archives: archives, Secrets: client, ID: servicehost.Env("INSTANCE_ID", "worker-"+contracts.ID()[:8]), Token: c.Token, ToolHubURL: client.CatalogURL}
 		return servicehttp.New(c, db.Ping, func(*http.ServeMux) {}), w.Run, nil
 	})
 }

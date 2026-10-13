@@ -27,6 +27,17 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		node = "node"
 	}
 	entry := os.Getenv("DSH_RUNNER")
+	if r.Engine == EngineDSHSource {
+		if w.SourceHarness == nil {
+			return errors.New("source engine is not enabled")
+		}
+		// Recheck before every process; no silent replacement of active-run code.
+		verified, err := VerifySourceHarness(w.SourceHarness.entry)
+		if err != nil {
+			return err
+		}
+		entry = verified.entry
+	}
 	if entry == "" {
 		entry = "harness/runner.mjs"
 	}
@@ -42,6 +53,10 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		return e
 	}
 	cmd := exec.CommandContext(ctx, node, "--max-old-space-size=192", entry)
+	if r.Engine == EngineDSHSource {
+		cmd = exec.CommandContext(ctx, node, "--max-old-space-size=192", "--no-global-search-paths", entry)
+		cmd.Dir = filepath.Dir(entry)
+	}
 	// The harness gets no service/database/model credentials. Tool and model calls cross the pipe.
 	for _, key := range []string{"PATH", "SystemRoot", "WINDIR", "TEMP", "TMP", "LANG"} {
 		if value := os.Getenv(key); value != "" {
@@ -69,8 +84,11 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		contextTokens = 32000
 	}
 	init := map[string]any{"type": "init", "run_id": r.ID, "task": r.Task, "system": SystemMessage(original).Content, "model": r.Snapshot.Agent.Model.Model, "context_tokens": contextTokens, "tools": defs}
-	if r.Engine == EngineDSHEvidence {
+	if r.Engine == EngineDSHEvidence || r.Engine == EngineDSHSource {
 		init["evidence_protocol"] = 1
+	}
+	if r.Engine == EngineDSHSource {
+		init["engine"] = EngineDSHSource
 	}
 	if _, e = fmt.Fprintln(stdin, string(JSON(init))); e != nil {
 		return e
@@ -83,7 +101,7 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		if e = json.Unmarshal(scanner.Bytes(), &f); e != nil {
 			return fmt.Errorf("DSH protocol: %w", e)
 		}
-		if f.Method == "failed" && r.Engine != EngineDSHEvidence {
+		if f.Method == "failed" && r.Engine != EngineDSHEvidence && r.Engine != EngineDSHSource {
 			return fmt.Errorf("DSH failed: %s", f.Params)
 		}
 		if f.ID != expected {

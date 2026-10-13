@@ -3,6 +3,7 @@ param(
  [string]$Node='node',
  [string]$Pnpm='pnpm',
  [string]$StoreDirectory='',
+	[string]$SourceArtifact='',
  [switch]$Offline
 )
 $ErrorActionPreference='Stop'
@@ -54,6 +55,27 @@ Copy-Item -LiteralPath $nodePath -Destination (Join-Path $nodeDirectory $nodeNam
 Copy-Item -LiteralPath (Join-Path $root 'licenses/node-v24.19.0.txt') -Destination (Join-Path $nodeDirectory 'LICENSE.txt')
 Copy-Item -LiteralPath (Join-Path $root 'deploy/release-contract.json') -Destination $target
 Copy-Item -LiteralPath (Join-Path $root 'source-provenance.json') -Destination $target
+$sourceEngine=$null
+if($SourceArtifact){
+ $artifact=(Resolve-Path -LiteralPath $SourceArtifact).Path
+ $pin=Get-Content -LiteralPath (Join-Path $root 'worker/source-harness-lock.json') -Raw|ConvertFrom-Json
+ $manifestFile=Join-Path $artifact 'dist/manifest.json'
+ if((Get-FileHash -LiteralPath $manifestFile).Hash.ToLowerInvariant() -cne $pin.manifest_sha256){throw 'Source artifact does not match the compiled Worker pin.'}
+ $sourceManifest=Get-Content -LiteralPath $manifestFile -Raw|ConvertFrom-Json
+ if($sourceManifest.source_engine -cne $pin.engine -or $sourceManifest.upstream_commit -cne $pin.upstream_commit){throw 'Source engine provenance mismatch.'}
+ $sourceDestination=Join-Path $target 'source-harness'
+ New-Item -ItemType Directory -Path (Join-Path $sourceDestination 'dist')|Out-Null
+ $sourceFiles=@{'source-runner.mjs'=$sourceManifest.source_runner_sha256;'dist/kernel.mjs'=$sourceManifest.kernel_sha256;'dist/THIRD_PARTY_NOTICES.txt'=$sourceManifest.notices_sha256;'dist/manifest.json'=$pin.manifest_sha256}
+ foreach($relative in $sourceFiles.Keys){
+  $inputFile=Get-Item -LiteralPath (Join-Path $artifact $relative)
+  if(($inputFile.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $inputFile.PSIsContainer){throw 'Source package files must be regular files.'}
+  $outputFile=Join-Path $sourceDestination $relative
+  Copy-Item -LiteralPath $inputFile.FullName -Destination $outputFile
+  if((Get-FileHash -LiteralPath $outputFile).Hash.ToLowerInvariant() -cne $sourceFiles[$relative]){throw 'Copied source artifact digest mismatch.'}
+ }
+ Copy-Item -LiteralPath (Join-Path $root 'worker/source-harness-lock.json') -Destination (Join-Path $sourceDestination 'source-lock.json')
+ $sourceEngine=$pin.engine
+}
 & (Join-Path $nodeDirectory $nodeName) --test (Join-Path $harness 'session-seams.test.mjs')
 if($LASTEXITCODE){throw 'Packaged Node and Harness interface checks failed.'}
 . (Join-Path $PSScriptRoot 'package-files.ps1')
@@ -64,6 +86,7 @@ $files=@(Get-ChildItem -LiteralPath $target -Recurse -File | Sort-Object FullNam
  @{path=[IO.Path]::GetRelativePath($target,$_.FullName).Replace('\','/');sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
 })
 $manifest=@{format=1;role='worker';source_commit=$commit;node_version=$version;pnpm_version=$pnpmVersion;dependency_layout='hoisted-contained';links=$links;offline=[bool]$Offline;files=$files;created_at=[datetime]::UtcNow.ToString('o')}
+if($sourceEngine){$manifest.source_engine=$sourceEngine;$manifest.source_activation='Opt-in DSH_SOURCE_RUNNER=<package>/source-harness/source-runner.mjs; compiled digest verified before claiming.'}
 if(@(& git -C $root status --porcelain).Count -or (& git -C $root rev-parse HEAD).Trim() -cne $commit){throw 'Source changed during packaging.'}
 $manifest|ConvertTo-Json -Depth 6|Set-Content -LiteralPath (Join-Path $target 'package.json')
 Write-Output ('Complete Worker package: '+$target)

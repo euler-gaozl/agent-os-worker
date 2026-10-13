@@ -1,0 +1,107 @@
+package worker
+
+import (
+	"crypto/sha256"
+	_ "embed"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+
+	"github.com/euler-gaozl/agent-os-runtime/execution"
+)
+
+const EngineDSHSource = execution.EngineDSHSource
+
+// The compiled lock is the trust anchor. An adjacent, editable manifest alone
+// must never authorize a different runner for the same replay engine.
+//
+//go:embed source-harness-lock.json
+var sourceHarnessLock []byte
+
+type harnessLock struct {
+	Engine   string `json:"engine"`
+	Upstream string `json:"upstream_commit"`
+	Manifest string `json:"manifest_sha256"`
+}
+
+// SourceHarness is constructed only after checking the compiled release pin.
+// Deploy this artifact read-only; verification is integrity checking, not an OS sandbox.
+type SourceHarness struct{ entry string }
+
+func VerifySourceHarness(entry string) (*SourceHarness, error) {
+	var lock harnessLock
+	if err := json.Unmarshal(sourceHarnessLock, &lock); err != nil {
+		return nil, err
+	}
+	return verifySourceHarness(entry, lock)
+}
+
+func verifySourceHarness(entry string, lock harnessLock) (*SourceHarness, error) {
+	if !filepath.IsAbs(entry) || filepath.Base(entry) != "source-runner.mjs" || lock.Engine != EngineDSHSource {
+		return nil, errors.New("absolute pinned source-runner.mjs required")
+	}
+	root := filepath.Dir(entry)
+	for _, dir := range []string{root, filepath.Join(root, "dist")} {
+		info, err := os.Lstat(dir)
+		if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+			return nil, errors.New("source artifact directory unavailable or linked")
+		}
+	}
+	body, err := checkedSourceFile(filepath.Join(root, "dist", "manifest.json"), lock.Manifest, 256<<10)
+	if err != nil {
+		return nil, err
+	}
+	var manifest struct {
+		Format   int    `json:"format"`
+		Target   string `json:"target"`
+		Engine   string `json:"source_engine"`
+		Upstream string `json:"upstream_commit"`
+		Runner   string `json:"source_runner_sha256"`
+		Kernel   string `json:"kernel_sha256"`
+		Notices  string `json:"notices_sha256"`
+	}
+	if json.Unmarshal(body, &manifest) != nil || manifest.Format != 1 || manifest.Target != "node24" || manifest.Engine != lock.Engine || manifest.Upstream != lock.Upstream {
+		return nil, errors.New("source artifact protocol or provenance mismatch")
+	}
+	for _, file := range []struct {
+		path, digest string
+		limit        int64
+	}{
+		{entry, manifest.Runner, 256 << 10},
+		{filepath.Join(root, "dist", "kernel.mjs"), manifest.Kernel, 16 << 20},
+		{filepath.Join(root, "dist", "THIRD_PARTY_NOTICES.txt"), manifest.Notices, 256 << 10},
+	} {
+		if _, err = checkedSourceFile(file.path, file.digest, file.limit); err != nil {
+			return nil, err
+		}
+	}
+	return &SourceHarness{entry: filepath.Clean(entry)}, nil
+}
+
+func checkedSourceFile(path, want string, limit int64) ([]byte, error) {
+	if len(want) != 64 {
+		return nil, errors.New("source digest missing")
+	}
+	info, err := os.Lstat(path)
+	if err != nil || !info.Mode().IsRegular() || info.Size() > limit {
+		return nil, fmt.Errorf("source artifact unavailable or oversized: %s", filepath.Base(path))
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	body, err := io.ReadAll(io.LimitReader(f, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	digest := sha256.Sum256(body)
+	if int64(len(body)) > limit || hex.EncodeToString(digest[:]) != want {
+		return nil, fmt.Errorf("source artifact digest mismatch: %s", filepath.Base(path))
+	}
+	return body, nil
+}
