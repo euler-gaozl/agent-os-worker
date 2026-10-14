@@ -15,9 +15,9 @@
   "owner_modules": [
     {
       "module": "github.com/euler-gaozl/agent-os-runtime",
-      "version": "v0.1.0-rc.3",
-      "commit": "3fbbb52b37c91c042c8fb9a12b1ab69692a76d5a",
-      "module_sum": "h1:hiYj7qbNcoJ6IkXW3ux00alzJ0eUB6Krgx1phgRr1sw=",
+      "version": "v0.1.0-rc.4",
+      "commit": "e8d3b4fb5cf6975d5a3417c9f2b33789dee4e938",
+      "module_sum": "h1:4Gsfnd19P/IpvTxT6JwSmRVsI3Y1HgOsl1HUZLnUdmU=",
       "go_mod_sum": "h1:k9YqiDPGj46BQ6hAOOXaV3l3bbdZ3hjNr3RG4OUxm9E=",
       "protocol": "runtime-execution-v1",
       "package": "execution"
@@ -39,5 +39,13 @@
     "commit": "439b9086155383a4b4cb19c261ac6690ab02a352",
     "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
     "manifest_sha256": "c48cb0675e30d4be6fc00d42a4f6ebff78487ac36eef54761991b197ee139ba4"
+  },
+  "budget_harness": {
+    "format": 1,
+    "engine": "dsh-source-639ed015-budget-v3",
+    "repository": "euler-gaozl/agent-os-harness",
+    "commit": "437bb440a849ecfc49971f7fa96afe9fb4f7aa29",
+    "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "manifest_sha256": "b28323de11cd1bd51f3cdd5fe087bd8806b307fac526a28da25526c330100e4a"
   }
 }

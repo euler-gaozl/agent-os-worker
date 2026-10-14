@@ -19,6 +19,7 @@ type Worker struct {
 	RuntimeURL      string
 	SourceHarness   *SourceHarness
 	ResidentHarness *SourceHarness
+	BudgetHarness   *SourceHarness
 	Token           string
 	Poll            time.Duration
 }

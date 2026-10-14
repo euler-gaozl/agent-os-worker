@@ -16,6 +16,7 @@ import (
 
 const EngineDSHSource = execution.EngineDSHSource
 const EngineDSHResident = execution.EngineDSHResident
+const EngineDSHBudget = execution.EngineDSHBudget
 
 func isSourceEngine(engine string) bool { return execution.IsSourceEngine(engine) }
 
@@ -27,6 +28,9 @@ var sourceHarnessLock []byte
 
 //go:embed resident-harness-lock.json
 var residentHarnessLock []byte
+
+//go:embed budget-harness-lock.json
+var budgetHarnessLock []byte
 
 type harnessLock struct {
 	Engine   string `json:"engine"`
@@ -46,6 +50,10 @@ func VerifyResidentHarness(entry string) (*SourceHarness, error) {
 	return verifySourceVersion(entry, EngineDSHResident)
 }
 
+func VerifyBudgetHarness(entry string) (*SourceHarness, error) {
+	return verifySourceVersion(entry, EngineDSHBudget)
+}
+
 func verifySourceVersion(entry, engine string) (*SourceHarness, error) {
 	var pin []byte
 	switch engine {
@@ -53,6 +61,8 @@ func verifySourceVersion(entry, engine string) (*SourceHarness, error) {
 		pin = sourceHarnessLock
 	case EngineDSHResident:
 		pin = residentHarnessLock
+	case EngineDSHBudget:
+		pin = budgetHarnessLock
 	default:
 		return nil, errors.New("unsupported source artifact engine")
 	}
@@ -115,6 +125,8 @@ func (w *Worker) sourceForEngine(engine string) (*SourceHarness, error) {
 		selected = w.SourceHarness
 	case EngineDSHResident:
 		selected = w.ResidentHarness
+	case EngineDSHBudget:
+		selected = w.BudgetHarness
 	default:
 		return nil, errors.New("unsupported source engine")
 	}

@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 	"unicode/utf16"
+
+	"github.com/euler-gaozl/agent-os-runtime/execution"
 )
 
 type Completion struct {
@@ -42,6 +44,9 @@ func ModelRequest(config ModelConfig, messages []Message, tools []Tool) []byte {
 	return JSON(body)
 }
 func (w *Worker) CompleteModel(ctx context.Context, r Run, id string, messages []Message, tools []Tool) (Message, error) {
+	if r.Engine == EngineDSHBudget {
+		return Message{}, errors.New("budget engine requires durable model outcome protocol")
+	}
 	cfg := r.Snapshot.Agent.Model
 	if e := validateEndpoint(cfg.BaseURL); e != nil {
 		return Message{}, e
@@ -65,6 +70,36 @@ func (w *Worker) CompleteModel(ctx context.Context, r Run, id string, messages [
 			return Message{}, errors.New("source final provider estimated context budget exceeded or invalid")
 		}
 	}
+	return w.completeModelRequest(ctx, r, id, request)
+}
+
+// v3 returns a final request only after a pre-send context rejection or a
+// committed provider receipt. Runtime owns the durable outcome and usage.
+func (w *Worker) CompleteBudgetModel(ctx context.Context, r Run, id string, messages []Message, tools []Tool) (json.RawMessage, error) {
+	if r.Engine != EngineDSHBudget {
+		return nil, errors.New("budget outcome requested for a historical engine")
+	}
+	cfg := r.Snapshot.Agent.Model
+	if err := validateEndpoint(cfg.BaseURL); err != nil {
+		return nil, err
+	}
+	request := execution.BudgetModelRequest(cfg, messages, tools)
+	rejected, err := execution.InspectBudgetRequest(request, r.Snapshot.Agent.ContextTokens, cfg.MaxTokens)
+	if err != nil {
+		return nil, err
+	}
+	if rejected != nil {
+		return request, nil
+	}
+	_, err = w.completeModelRequest(ctx, r, id, request)
+	if err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
+func (w *Worker) completeModelRequest(ctx context.Context, r Run, id string, request []byte) (Message, error) {
+	cfg := r.Snapshot.Agent.Model
 	attempt, cached, e := w.Store.BeginModel(ctx, r, id, request)
 	if e != nil {
 		return Message{}, e

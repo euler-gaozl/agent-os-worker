@@ -1,6 +1,6 @@
 # Agent OS Worker
 
-独立的任务调度、模型传输和 DSH 子进程宿主。执行持久化与迁移属于 Runtime，Worker 消费其固定 `runtime-execution-v1` 接口（模块 `v0.1.0-rc.3`），不导入 Runtime 路由、工具效果或迁移实现。
+独立的任务调度、模型传输和 DSH 子进程宿主。执行持久化与迁移属于 Runtime，Worker 消费其固定 `runtime-execution-v1` 接口（模块 `v0.1.0-rc.4`），不导入 Runtime 路由、工具效果或迁移实现。
 
 ## 执行与多实例
 
@@ -14,9 +14,15 @@
 
 `DSH_SOURCE_RUNNER` 启用 state-v1；`DSH_RESIDENT_RUNNER` 单独启用 resident-v2。各自的产物清单 pin 编译进 Worker，领取前和每次 Node 启动前核验内核、runner、许可证及引擎身份。缺失、替换或不匹配会拒绝执行，不回退版本。产物目录应只读，哈希不是抵御恶意 OS 用户竞态的隔离措施。
 
+`DSH_BUDGET_RUNNER` 是独立 budget-v3 候选，传递任务快照的有效输出上限。
+上下文预检拒绝不登记模型调用，交由 Runtime 在原 fence 下冻结；成功结果及 usage
+从已提交原回执派生。最终 provider body 与原意图/快照的模型、工具和参数完整绑定。
+网络、401、预算、取消、存储或截断仍明确失败，不伪装成可压缩的上下文拒绝。
+候选单元/真实 Node 协议检查已通过；完整发布包、联合进程恢复和正式安装仍需另验。
+
 源码状态经 Worker 身份调用 Runtime `POST /v1/source-state`，不用通用 ToolHub 写接口。未知传输、5xx 或异常 JSON 按原操作最多尝试 3 次，每次 10 秒并有界退避；仍无法取得回执则进入 `waiting_unknown`，不能根据缺回复伪造成功或失败。管理恢复需匹配的 Runtime `/resume-source-state`，不能用普通失败重试替代。
 
-最终模型请求在 Runtime 加入当前约束/子任务结果、应用运维输出上限后检查。现有 UTF-16 字符/4 + 512 封装 token + 预留输出属于启发式，可能低估非英文；不能声称等价于模型 tokenizer。真实研究已发现固定 runner 输出上限、上下文错误恢复及家族预算问题，修复候选尚未完成，不继续靠加预算宣称验收。
+最终模型请求在 Runtime 加入当前约束/子任务结果、应用运维输出上限后检查。现有 UTF-16 字符/4 + 512 封装 token + 预留输出属于启发式，可能低估非英文；不能声称等价于模型 tokenizer。真实研究已发现的执行问题，仍须用 v3 正式安装后的有界模型与业务成稿验收确认。
 
 ## 构建与完整发布包
 
@@ -36,6 +42,9 @@ go vet -mod=vendor ./...
 
 `Build.ps1` 只生成 Worker/healthcheck。`Package-Worker.ps1` 要求干净提交与新目录，加入 Node、固定 Harness 依赖、发布契约、来源和完整 SHA-256 清单。`-Offline -StoreDirectory <保留的pnpm-store>` 可离线重建。需要源码引擎时加 `-SourceArtifact <v1目录>` / `-ResidentArtifact <v2目录>`，未打包的版本不得在配置中启用。
 
+v3 另外使用 `-BudgetArtifact <v3目录>`，三套固定产物可共存。搬迁检查会执行包内
+所有声明的源码引擎，不能用旧 runner 能启动来代替新版本验证。
+
 包使用 hoisted 依赖，拒绝绝对/目录链接，Unix 命令文件链接需在包内且进入清单。`Test-RelocatedPackage.ps1 -Package <目录>` 真正移动包，确认原路径不存在并运行固定内核；这是同 OS/架构搬迁测试，不使 Windows 二进制在 Linux 运行。Docker 使用自身固定依赖和 UID 10001，默认不带可选源码产物。
 
 ## 配置与权限兼容
@@ -48,6 +57,6 @@ Runtime 独占迁移和授权。旧单仓 Worker readiness 读取更广的表，
 
 ## 验证状态
 
-真实 Windows Worker/Node、受限 PostgreSQL 和 Runtime HTTP 已验证状态提交后强杀、丢回复、人工恢复及旧/新 Worker 接力；模型、ToolHub 和部分存储为明确夹具。resident-v2 仍为未激活候选，不能把这些测试说成付费模型、跨引擎迁移或完整内存验收。
+真实 Windows Worker/Node、受限 PostgreSQL 和 Runtime HTTP 已验证状态提交后强杀、丢回复、人工恢复及旧/新 Worker 接力；这些故障中的模型、ToolHub 和部分存储为明确夹具。Windows 已安装支持 resident-v2 的 Worker 并有独立的受控真实供应商验证，默认新根仍为 v1。budget-v3 尚未安装，完整内存与研究验收仍未完成。
 
 `AGENTOS_REQUIRE_DSH=1` 使依赖缺失直接失败，不能静默跳过。Actions 日常关闭。参见 [历史适配器](harness/README.md)、[许可证说明](licenses/README.md)、[详细历史证据](docs/history/service-notes-20261014.en.md) 和 [平台交付计划](https://github.com/euler-gaozl/agent-os/blob/main/docs/windows-single-machine-plan.md)。

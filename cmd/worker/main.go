@@ -31,7 +31,7 @@ func main() {
 		}
 		client := servicehost.Client()
 		archives := artifactWriter{client, os.Getenv("STORAGE_URL")}
-		var source, resident *worker.SourceHarness
+		var source, resident, budget *worker.SourceHarness
 		var versions []string
 		if entry := os.Getenv("DSH_SOURCE_RUNNER"); entry != "" {
 			var err error
@@ -49,11 +49,19 @@ func main() {
 			}
 			versions = append(versions, worker.EngineDSHResident)
 		}
+		if entry := os.Getenv("DSH_BUDGET_RUNNER"); entry != "" {
+			var err error
+			budget, err = worker.VerifyBudgetHarness(entry)
+			if err != nil {
+				return nil, nil, err
+			}
+			versions = append(versions, worker.EngineDSHBudget)
+		}
 		store, err := execution.NewSourceVersions(db, archives, versions)
 		if err != nil {
 			return nil, nil, err
 		}
-		w := &worker.Worker{Store: store, SourceHarness: source, ResidentHarness: resident, RuntimeURL: os.Getenv("RUNTIME_URL"), Archives: archives, Secrets: client, ID: servicehost.Env("INSTANCE_ID", "worker-"+contracts.ID()[:8]), Token: c.Token, ToolHubURL: client.CatalogURL}
+		w := &worker.Worker{Store: store, SourceHarness: source, ResidentHarness: resident, BudgetHarness: budget, RuntimeURL: os.Getenv("RUNTIME_URL"), Archives: archives, Secrets: client, ID: servicehost.Env("INSTANCE_ID", "worker-"+contracts.ID()[:8]), Token: c.Token, ToolHubURL: client.CatalogURL}
 		return servicehttp.New(c, db.Ping, func(*http.ServeMux) {}), w.Run, nil
 	})
 }

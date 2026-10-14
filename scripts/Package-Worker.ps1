@@ -5,6 +5,7 @@ param(
  [string]$StoreDirectory='',
 	[string]$SourceArtifact='',
  [string]$ResidentArtifact='',
+ [string]$BudgetArtifact='',
  [switch]$Offline
 )
 $ErrorActionPreference='Stop'
@@ -59,7 +60,8 @@ Copy-Item -LiteralPath (Join-Path $root 'source-provenance.json') -Destination $
 $sourceEngines=@()
 foreach($selection in @(
  @{artifact=$SourceArtifact;lock='source-harness-lock.json';directory='source-harness';engine='dsh-source-639ed015-state-v1'},
- @{artifact=$ResidentArtifact;lock='resident-harness-lock.json';directory='resident-harness';engine='dsh-source-639ed015-resident-v2'}
+ @{artifact=$ResidentArtifact;lock='resident-harness-lock.json';directory='resident-harness';engine='dsh-source-639ed015-resident-v2'},
+ @{artifact=$BudgetArtifact;lock='budget-harness-lock.json';directory='budget-harness';engine='dsh-source-639ed015-budget-v3'}
 )){
  if(-not $selection.artifact){continue}
  $artifact=(Resolve-Path -LiteralPath $selection.artifact).Path
@@ -94,6 +96,7 @@ $files=@(Get-ChildItem -LiteralPath $target -Recurse -File | Sort-Object FullNam
 $manifest=@{format=1;role='worker';source_commit=$commit;node_version=$version;pnpm_version=$pnpmVersion;dependency_layout='hoisted-contained';links=$links;offline=[bool]$Offline;files=$files;created_at=[datetime]::UtcNow.ToString('o')}
 if($SourceArtifact){$manifest.source_engine='dsh-source-639ed015-state-v1';$manifest.source_activation='Opt-in DSH_SOURCE_RUNNER=<package>/source-harness/source-runner.mjs; compiled digest verified before claiming.'}
 if($ResidentArtifact){$manifest.resident_engine='dsh-source-639ed015-resident-v2';$manifest.resident_activation='Opt-in DSH_RESIDENT_RUNNER=<package>/resident-harness/source-runner.mjs; requires Runtime with explicit resident-v2 support.'}
+if($BudgetArtifact){$manifest.budget_engine='dsh-source-639ed015-budget-v3';$manifest.budget_activation='Opt-in DSH_BUDGET_RUNNER=<package>/budget-harness/source-runner.mjs; requires explicit release/rollback support for durable model receipt protocol 1.'}
 $manifest.source_engines=$sourceEngines
 if(@(& git -C $root status --porcelain).Count -or (& git -C $root rev-parse HEAD).Trim() -cne $commit){throw 'Source changed during packaging.'}
 $manifest|ConvertTo-Json -Depth 6|Set-Content -LiteralPath (Join-Path $target 'package.json')
