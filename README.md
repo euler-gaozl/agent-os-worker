@@ -1,56 +1,26 @@
 # Agent OS Worker
 
-Independent scheduler, model transport and DSH subprocess host. Runtime owns execution persistence and migrations; the Worker consumes the fixed `runtime-execution-v1` facade from Runtime `v0.1.0-rc.3`. It does not import Runtime routes, tool effects or migrations. Extraction is based on integration commit `752c9081f05733365f46594bd7581ec55b4ad875`.
+独立的任务调度、模型传输和 DSH 子进程宿主。执行持久化与迁移属于 Runtime，Worker 消费其固定 `runtime-execution-v1` 接口（模块 `v0.1.0-rc.3`），不导入 Runtime 路由、工具效果或迁移实现。
 
-## Resident-v2 candidate (not activated)
+## 执行与多实例
 
-`DSH_SOURCE_RUNNER` still enables only the original source state-v1 artifact.
-`DSH_RESIDENT_RUNNER` separately enables resident-v2. Each has an independent
-compiled manifest pin, verified before enabling claims and again before every
-Node launch. Verified handles carry their engine identity; a missing artifact,
-swapped handle, mismatched pin or changed file is rejected without version
-fallback. Both variants use the final provider-body budget check and the same
-Runtime-owned archive/state/receipt protocol. Existing tasks keep their engine.
+默认每 300 ms 领取任务，租约 20 秒。多实例需使用不同 `INSTANCE_ID`，通过 Runtime 事务和 fencing 竞争。数据库就绪检查仅覆盖 Worker 所需的六张执行表，不证明 Registry、Storage、ToolHub 或模型可用。
 
-`Package-Worker.ps1 -SourceArtifact <v1-root> -ResidentArtifact <v2-root>` includes
-both verified artifacts under separate `source-harness` and `resident-harness`
-directories. Either option can be omitted; omitted versions must not be enabled
-in deployment configuration. Resident-v2 requires a Runtime that explicitly
-lists that version, plus matching integration release and rollback guards.
-The source-state HTTP name alone is insufficient to prove v2 support.
+每个任务拥有 Node 子进程。服务身份、供应商 Key 和数据库连接留在 Go 宿主与 Registry，Node 仅收到少量白名单环境。外部调用先登记意图，保存回执；未知效果按原协议处理，不回退到其他域 SQL 或宿主 Shell。
 
-Local development evidence: 53 Worker test records passed with zero skips;
-seven actual Windows Worker/Node tests using restricted PostgreSQL and Runtime
-HTTP passed, including committed-state interruption, lost HTTP replies and safe
-operator recovery for both source versions. A v1 task started by the old
-`70d45cd` Worker was interrupted after commit and completed by the new Worker
-without repeating committed model/tool/state effects. Provider, ToolHub routing
-and immutable Storage are fixtures, not paid provider/durability acceptance.
-Evidence is `p25-worker-resident-unit-b847ca3ea20c4d378c241b948badb6e2` and
-`p25-worker-resident-6a61fe5d1e7f4e9ebf2c71de2f2eaf36`. Package relocation and
-production activation are separate gates; this candidate has not changed the
-live deployment. GitHub Actions remain disabled.
+支持三种历史引擎 `legacy-go`、`dsh-0.2.0-rc.2`、`dsh-0.2.0-rc.2-evidence-v1`，固定 runner 与依赖组合不变。源码引擎是另外的明确选择，不能改变未完成任务的引擎。
 
-## Build and verify
+## 固定源码 Harness
 
-`worker --execution-access-profile` reports the compiled `worker-minimal-v1`
-SQL requirement and exits before loading configuration, opening connections or
-starting Node. Only that exact single argument is handled. The release contract
-records the same profile; this is a compatibility claim, not a database grant or
-proof that a deployment is ready. The Windows coordinator checks the actual
-binary, bound Runtime/Worker database and effective login permissions before
-startup, update, rollback and pending recovery. Missing metadata is treated as a
-legacy requirement; malformed metadata or a different binary report is refused.
-The existing engines, pinned Harness assets and execution module are unchanged.
+`DSH_SOURCE_RUNNER` 启用 state-v1；`DSH_RESIDENT_RUNNER` 单独启用 resident-v2。各自的产物清单 pin 编译进 Worker，领取前和每次 Node 启动前核验内核、runner、许可证及引擎身份。缺失、替换或不匹配会拒绝执行，不回退版本。产物目录应只读，哈希不是抵御恶意 OS 用户竞态的隔离措施。
 
-Local candidate evidence `execution-access-build-1e387f7fc44c40e094e2ce0491f0ada7`
-records both entrypoint tests, vet and executable build; the actual binary report
-was exercised by 44 PostgreSQL/release checks in
-`execution-access-release-fdce72a63e154c74a34c70f8caf37a2a`.
-Formal activation and permission contraction are separate steps; no model or CI
-calls were made for this addition.
+源码状态经 Worker 身份调用 Runtime `POST /v1/source-state`，不用通用 ToolHub 写接口。未知传输、5xx 或异常 JSON 按原操作最多尝试 3 次，每次 10 秒并有界退避；仍无法取得回执则进入 `waiting_unknown`，不能根据缺回复伪造成功或失败。管理恢复需匹配的 Runtime `/resume-source-state`，不能用普通失败重试替代。
 
-Use Go 1.27.2, PowerShell 7, Node 24 and pnpm 11.25.0. The committed vendor directory contains canonical fixed modules; no neighboring checkout, local `replace`, private credentials or network access is needed for Go builds.
+最终模型请求在 Runtime 加入当前约束/子任务结果、应用运维输出上限后检查。现有 UTF-16 字符/4 + 512 封装 token + 预留输出属于启发式，可能低估非英文；不能声称等价于模型 tokenizer。真实研究已发现固定 runner 输出上限、上下文错误恢复及家族预算问题，修复候选尚未完成，不继续靠加预算宣称验收。
+
+## 构建与完整发布包
+
+需要 Go 1.27.2、PowerShell 7、Node 24、pnpm 11.25.0。固定 Go 模块已随 `vendor` 提交，Go 构建不需邻近仓库或凭证。
 
 ```powershell
 $env:GOWORK='off'; $env:GOPROXY='off'
@@ -61,38 +31,23 @@ go test -mod=vendor -count=1 ./...
 go vet -mod=vendor ./...
 ./scripts/Verify-Ownership.ps1
 ./scripts/Build.ps1
-# Full independent release, including the selected Node and installed Harness:
-./scripts/Package-Worker.ps1 -Destination /absolute/path/to/new-worker-release
+./scripts/Package-Worker.ps1 -Destination <新的绝对发布目录>
 ```
 
-`Build.ps1` produces only the Worker and healthcheck executables. `Package-Worker.ps1` requires a clean commit and an unused destination; it adds Node, installed locked Harness dependencies, release contract, provenance and a complete SHA-256 inventory. `-Offline -StoreDirectory <retained-pnpm-store>` reconstructs without package downloads. Packages use hoisted dependencies and forbid directory/absolute links so Windows junctions cannot point back to the build directory. Unix command-file links must be relative, resolve inside the package and appear in its manifest. `Test-RelocatedPackage.ps1 -Package <package>` moves the package to a new sibling directory, verifies the original root is absent and hashes/link targets match, then runs the actual kernel through both fixed DSH protocols. This tests portability on the same OS/architecture; it does not make a Windows executable run on Linux. Docker builds its own locked dependencies and runs as UID 10001. Node and pnpm are pinned in CI; packages record the exact selected Node version and binary hash.
+`Build.ps1` 只生成 Worker/healthcheck。`Package-Worker.ps1` 要求干净提交与新目录，加入 Node、固定 Harness 依赖、发布契约、来源和完整 SHA-256 清单。`-Offline -StoreDirectory <保留的pnpm-store>` 可离线重建。需要源码引擎时加 `-SourceArtifact <v1目录>` / `-ResidentArtifact <v2目录>`，未打包的版本不得在配置中启用。
 
-The CI matrix tests Windows and Linux, the actual pinned DSH kernel using synthetic model and ToolHub HTTP, provider error/receipt handling, child credential isolation, owner dependency closure, standalone packaging, Linux race checks and image build. These tests do not claim real provider output, durable database recovery or old/new process handoff. Those are separate integration gates. With `AGENTOS_REQUIRE_DSH=1`, missing installed dependencies fail the kernel test rather than silently skip it.
+包使用 hoisted 依赖，拒绝绝对/目录链接，Unix 命令文件链接需在包内且进入清单。`Test-RelocatedPackage.ps1 -Package <目录>` 真正移动包，确认原路径不存在并运行固定内核；这是同 OS/架构搬迁测试，不使 Windows 二进制在 Linux 运行。Docker 使用自身固定依赖和 UID 10001，默认不带可选源码产物。
 
-## Run and dependencies
+## 配置与权限兼容
 
-Copy `deploy/service.example.json` outside the repository and supply deployment-specific identities, endpoints and the **Worker execution-domain account**, never an administrator account. Launch the binary with `--config /protected/worker.json`. Set `AGENTOS_NODE` and `DSH_RUNNER` to the packaged Node and `harness/runner.mjs`. Explicit endpoint settings take precedence over local defaults. Service and model credentials stay in the Go supervisor and Registry; the child receives a small environment allowlist and no service tokens, database URL or model key.
+把 [配置示例](deploy/service.example.json) 保存到仓库外，提供 **Worker 执行域应用账号**，不能使用管理员。`--config` 指向配置，`AGENTOS_NODE` 与 `DSH_RUNNER` 指向包内 Node 和历史 runner；容器/多机显式配置所有服务地址。
 
-Workers poll every 300 ms and use a 20-second lease by default. Deploy multiple instances with unique `INSTANCE_ID` values; they claim through Runtime's transaction/fencing code. Worker HTTP readiness checks its six execution tables. Readiness is not evidence that Registry, Storage, ToolHub or the model provider is available. Dependency failures preserve durable intent and unknown-effect semantics through the Runtime facade; no fallback to another service's SQL or a host shell is permitted.
+`worker --execution-access-profile` 在读取配置或启动 Node 前返回 `worker-minimal-v1`。Windows 维护器核对实际程序、Runtime/Worker 数据库绑定和有效权限；声明不等于已授权或已就绪。
 
-Default claims remain `legacy-go`, `dsh-0.2.0-rc.2`, and `dsh-0.2.0-rc.2-evidence-v1`. Their DSH runner and package lock remain unchanged. Source-engine support is an explicit candidate opt-in described below; upstream Session history is not yet bounded. See [historical Harness adapter](harness/README.md).
+Runtime 独占迁移和授权。旧单仓 Worker readiness 读取更广的表，回滚窗口内必须保留旧 SELECT；最小权限新账号不证明旧程序可回滚。一次更新一个已停止 Worker，把程序、执行模块、runner、锁文件作为固定整体保留。
 
-## Source-engine candidate
+## 验证状态
 
-The separate private `agent-os-harness` repository builds DSH from fixed official source. `worker/source-harness-lock.json` is embedded in the Worker binary and pins its manifest, upstream commit and new engine `dsh-source-639ed015-state-v1`. Set `DSH_SOURCE_RUNNER` to the absolute `source-runner.mjs` from that artifact to enable claims. Startup verifies the compiled manifest pin plus runner/kernel/license digests; each source run rechecks before launching. Missing or changed artifacts fail closed. An editable adjacent manifest cannot authorize another kernel. Artifact directories must be deployed read-only: digest checks are integrity checks, not protection from a malicious OS user racing file reads.
+真实 Windows Worker/Node、受限 PostgreSQL 和 Runtime HTTP 已验证状态提交后强杀、丢回复、人工恢复及旧/新 Worker 接力；模型、ToolHub 和部分存储为明确夹具。resident-v2 仍为未激活候选，不能把这些测试说成付费模型、跨引擎迁移或完整内存验收。
 
-`Package-Worker.ps1 -SourceArtifact <absolute-artifact-root>` adds only the four verified source runtime files and source pin under `source-harness/`. Existing npm engines retain their separate `harness/` directory. Source Node starts with the artifact working directory and `--no-global-search-paths`; it receives the existing small environment allowlist. Runtime/model/service credentials stay in Go. The default Docker image and packages without `-SourceArtifact` carry historical engines only; do not advertise source readiness for them.
-
-`POST /v1/source-state` goes directly to Runtime under the Worker identity. It never accesses state tables or generic ToolHub mutation routes. Runtime freezes each read, rejection and success using the staged operation ID. On uncertain transport, 5xx or malformed JSON the host retries the identical invocation up to three attempts (10 seconds per request with bounded delays). Fence/intent/auth rejections preserve their semantics. If a receipt remains unreachable, the task enters `waiting_unknown`, never a false completed/failed state based solely on missing delivery. The matching Runtime candidate adds control-only `POST /v1/runs/{id}/resume-source-state` after checking that the latest exchange is acknowledged source state and no calls remain unresolved. Its cancellation path can settle this state without replaying the update. Runtime `v0.1.0-rc.2` alone does **not** include that management recovery/cancellation addition; deploy the matching later Runtime candidate recorded by integration. The generic failed-run resume/reconcile buttons cannot substitute for it. Retries are not unbounded.
-
-The final model request is checked **after** Runtime has appended current constraints and child results and applied the operator output cap. It uses the pinned DSH UTF-16 characters/4 heuristic across the serialized provider body, plus 512 framing tokens and reserved output. This closes the invisible-payload accounting gap, but is not the model's exact tokenizer and can underestimate non-English input. Accurate tokenizer/usage calibration remains open; no exact context-fit claim is made. Original user rules, working-set text and tool schemas are never silently truncated.
-
-Local acceptance `p25-worker-source-bf435a1e014f4070a6cdf656445adb22` used a real Windows Worker executable, source DSH, restricted PostgreSQL and Runtime HTTP. After an actual automatic Compact deliberately omitted a dated fact, the next request still had the full working set. Killing Worker after state revision 2 committed but before its reply required fenced replacement; a separate test dropped the HTTP connection while keeping Worker alive. Both finished without repeated model/tool/state effects. Provider, ToolHub routing and immutable Storage were fixtures, not paid/provider or Storage-durability tests. Public submission, deployed activation, native Session restoration and long-history memory plateau are separate remaining gates.
-
-## Migration, upgrade and rollback
-
-Runtime alone creates the execution tables and grants both runtime/worker roles. Worker has no migration executable and cannot access a raw database/transaction through its facade. Only the Runtime `execution` and `internal/runstate` packages may enter the dependency closure. The SDK contains contracts and transport, not this service's SQL.
-
-Runtime's migration gives new Worker roles minimum execution permissions. **The historical monorepo Worker's readiness probe also reads other Runtime tables.** Keep existing legacy read grants during the old/new rollback window. A newly provisioned minimum-privilege role is valid for the new Worker, but is not proof that the old binary can roll back. No legacy grants are revoked by this extraction.
-
-Upgrade one stopped Worker at a time after compatibility verification; pin the executable, Runtime module, runner and lockfile as one release. Do not swap replay-visible engine behavior for unfinished runs. Checkpoint/archive acknowledgement must precede new effects, and uncertain writes require reconciliation. Exact source/module identifiers are in [provenance](source-provenance.json), deployment contracts in [release contract](deploy/release-contract.json). Live activation and cross-version recovery status are recorded by the integration repository, not inferred from successful standalone CI.
+`AGENTOS_REQUIRE_DSH=1` 使依赖缺失直接失败，不能静默跳过。Actions 日常关闭。参见 [历史适配器](harness/README.md)、[许可证说明](licenses/README.md)、[详细历史证据](docs/history/service-notes-20261014.en.md) 和 [平台交付计划](https://github.com/euler-gaozl/agent-os/blob/main/docs/windows-single-machine-plan.md)。
