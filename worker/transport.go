@@ -22,6 +22,7 @@ var externalHTTP = servicehttp.Client
 type SecretReader interface {
 	Secret(context.Context, string) (string, error)
 }
+type sourceEngineContext struct{}
 
 func (w *Worker) Secret(ctx context.Context, name string) (string, error) {
 	if name == "" {
@@ -48,9 +49,13 @@ func (w *Worker) SourceState(ctx context.Context, inv Invocation) ([]byte, error
 	if w.RuntimeURL == "" {
 		return nil, errors.New("Runtime endpoint required for source state")
 	}
+	limit := int64(4 << 20)
+	if ctx.Value(sourceEngineContext{}) == EngineDSHNative {
+		limit = 64 << 20
+	}
 	for attempt := 0; attempt < 3; attempt++ {
 		requestContext, cancel := context.WithTimeout(ctx, 10*time.Second)
-		body, err := internalRequest(requestContext, strings.TrimRight(w.RuntimeURL, "/")+"/v1/source-state", w.Token, inv)
+		body, err := internalRequestLimit(requestContext, strings.TrimRight(w.RuntimeURL, "/")+"/v1/source-state", w.Token, inv, limit)
 		cancel()
 		if err == nil && json.Valid(body) {
 			return body, nil
@@ -87,6 +92,9 @@ func (e *serviceResponseError) Error() string {
 	return fmt.Sprintf("service HTTP %d: %s", e.code, e.detail)
 }
 func internalRequest(ctx context.Context, endpoint, token string, v any) ([]byte, error) {
+	return internalRequestLimit(ctx, endpoint, token, v, 4<<20)
+}
+func internalRequestLimit(ctx context.Context, endpoint, token string, v any, limit int64) ([]byte, error) {
 	req, e := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(JSON(v)))
 	if e != nil {
 		return nil, e
@@ -98,11 +106,11 @@ func internalRequest(ctx context.Context, endpoint, token string, v any) ([]byte
 		return nil, e
 	}
 	defer resp.Body.Close()
-	body, e := io.ReadAll(io.LimitReader(resp.Body, 4<<20+1))
+	body, e := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if e != nil {
 		return nil, e
 	}
-	if len(body) > 4<<20 {
+	if int64(len(body)) > limit {
 		return nil, errors.New("internal response too large")
 	}
 	if resp.StatusCode == 409 {

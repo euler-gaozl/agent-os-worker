@@ -1,6 +1,6 @@
 # Agent OS Worker
 
-独立的任务调度、模型传输和 DSH 子进程宿主。执行持久化与迁移属于 Runtime，Worker 消费其固定 `runtime-execution-v1` 接口（模块 `v0.1.0-rc.4`），不导入 Runtime 路由、工具效果或迁移实现。
+独立的任务调度、模型传输和 DSH 子进程宿主。执行持久化与迁移属于 Runtime，Worker 消费其固定 `runtime-execution-v1` 接口（模块 `v0.1.0-rc.5`），不导入 Runtime 路由、工具效果或迁移实现。
 
 ## 执行与多实例
 
@@ -19,6 +19,14 @@
 从已提交原回执派生。最终 provider body 与原意图/快照的模型、工具和参数完整绑定。
 网络、401、预算、取消、存储或截断仍明确失败，不伪装成可压缩的上下文拒绝。
 候选单元/真实 Node 协议检查已通过；完整发布包、联合进程恢复和正式安装仍需另验。
+
+`DSH_NATIVE_RUNNER` 是独立 native-v4 候选，传递服务端发现并冻结的模型能力，
+生成和压缩均用模型支持的最大输出，取消旧字符估算预发送拒绝和家族 token 配额。
+传输保留请求/响应各 32 MiB 字节保护、2 分钟发送/首响应保护及独立响应读取空闲保护；
+没有 90 秒整次生成截止。只有完整、可识别的 HTTP 400 上下文错误可进入压缩恢复，
+真实发送的拒绝回执也持久化并计次。网络中断、部分回包和截断不伪装为未发送。
+native 的任务状态 HTTP 允许 64 MiB 响应，普通工具及历史引擎仍为 4 MiB。
+Node 堆配置 512 MiB、帧 128 MiB，仅作用于 native；这不是进程 RSS 或平台内存验收结论。
 
 源码状态经 Worker 身份调用 Runtime `POST /v1/source-state`，不用通用 ToolHub 写接口。未知传输、5xx 或异常 JSON 按原操作最多尝试 3 次，每次 10 秒并有界退避；仍无法取得回执则进入 `waiting_unknown`，不能根据缺回复伪造成功或失败。管理恢复需匹配的 Runtime `/resume-source-state`，不能用普通失败重试替代。
 
@@ -44,6 +52,7 @@ go vet -mod=vendor ./...
 
 v3 另外使用 `-BudgetArtifact <v3目录>`，三套固定产物可共存。搬迁检查会执行包内
 所有声明的源码引擎，不能用旧 runner 能启动来代替新版本验证。
+v4 使用 `-NativeArtifact <v4目录>`；四套源码产物分别固定，旧编译 pin 和历史 runner 不变。
 
 包使用 hoisted 依赖，拒绝绝对/目录链接，Unix 命令文件链接需在包内且进入清单。`Test-RelocatedPackage.ps1 -Package <目录>` 真正移动包，确认原路径不存在并运行固定内核；这是同 OS/架构搬迁测试，不使 Windows 二进制在 Linux 运行。Docker 使用自身固定依赖和 UID 10001，默认不带可选源码产物。
 
@@ -60,3 +69,9 @@ Runtime 独占迁移和授权。旧单仓 Worker readiness 读取更广的表，
 真实 Windows Worker/Node、受限 PostgreSQL 和 Runtime HTTP 已验证状态提交后强杀、丢回复、人工恢复及旧/新 Worker 接力；这些故障中的模型、ToolHub 和部分存储为明确夹具。Windows 已安装支持 resident-v2 的 Worker 并有独立的受控真实供应商验证，默认新根仍为 v1。budget-v3 尚未安装，完整内存与研究验收仍未完成。
 
 `AGENTOS_REQUIRE_DSH=1` 使依赖缺失直接失败，不能静默跳过。Actions 日常关闭。参见 [历史适配器](harness/README.md)、[许可证说明](licenses/README.md)、[详细历史证据](docs/history/service-notes-20261014.en.md) 和 [平台交付计划](https://github.com/euler-gaozl/agent-os/blob/main/docs/windows-single-machine-plan.md)。
+
+native 候选本地全仓 96 条检查通过、零跳过，包含真实 TLS 大消息传输、回执缓存、
+请求上传停滞、响应持续进展/停滞/取消、实际固定 Node 读取 4.5 MB HTTP 任务状态并返回
+超过 5 MiB 文本、产物篡改拒绝和历史回归。模型/执行账本为明确夹具，不是付费模型、
+实际数据库接管或正式安装证明。独立评审发现的旧状态响应容量和上传无截止问题已修复。
+原始证据由本机 `ops/native-worker.path` 索引，联合进程故障和发布仍待完成。

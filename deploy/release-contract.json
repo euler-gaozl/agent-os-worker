@@ -32,6 +32,9 @@
   "budget_engine_candidate": "dsh-source-639ed015-budget-v3",
   "budget_activation_condition": "Separate compiled budget-v3 pin and DSH_BUDGET_RUNNER; Runtime with budget-v3 state support; managed release and rollback checks; joint fault acceptance required before default selection.",
   "budget_model_receipt_protocol": 1,
+  "native_engine_candidate": "dsh-source-639ed015-native-v4",
+  "native_model_receipt_protocol": 2,
+  "native_activation_condition": "Separately pinned DSH_NATIVE_RUNNER; Runtime native-v4 with immutable model capabilities and protocol 2; joint fault and managed release acceptance required before activation.",
   "resident_activation_condition": "Separately pinned DSH_RESIDENT_RUNNER, explicit Runtime resident-v2 support and compatible release/rollback guards required; not enabled by the v1 opt-in.",
   "source_activation_condition": "Pinned source artifact explicitly configured; Runtime source-state HTTP and working-state migration required. Public submission/activation acceptance separate.",
   "source_required_contract": {

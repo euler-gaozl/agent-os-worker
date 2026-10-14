@@ -50,7 +50,11 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 	}
 	cmd := exec.CommandContext(ctx, node, "--max-old-space-size=192", entry)
 	if isSourceEngine(r.Engine) {
-		cmd = exec.CommandContext(ctx, node, "--max-old-space-size=192", "--no-global-search-paths", entry)
+		heap := "--max-old-space-size=192"
+		if r.Engine == EngineDSHNative {
+			heap = "--max-old-space-size=512"
+		}
+		cmd = exec.CommandContext(ctx, node, heap, "--no-global-search-paths", entry)
 		cmd.Dir = filepath.Dir(entry)
 	}
 	// The harness gets no service/database/model credentials. Tool and model calls cross the pipe.
@@ -93,11 +97,19 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		}
 		init["model_max_tokens"] = output
 	}
+	if r.Engine == EngineDSHNative {
+		init["model_limits"] = r.Snapshot.Agent.Model.Limits
+		init["model_max_tokens"] = r.Snapshot.Agent.Model.MaxTokens
+	}
 	if _, e = fmt.Fprintln(stdin, string(JSON(init))); e != nil {
 		return e
 	}
 	scanner := bufio.NewScanner(stdout)
-	scanner.Buffer(make([]byte, 65536), 32<<20)
+	frameLimit := 32 << 20
+	if r.Engine == EngineDSHNative {
+		frameLimit = 128 << 20
+	}
+	scanner.Buffer(make([]byte, 65536), frameLimit)
 	expected := 1
 	for scanner.Scan() {
 		var f harnessFrame
@@ -135,5 +147,8 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 }
 
 func (w *Worker) harnessExchange(ctx context.Context, r *Run, f harnessFrame) (any, bool, error) {
-	return w.Store.Exchange(ctx, r, f, w)
+	// Exchange verifies the immutable run engine and fence before invoking any
+	// effects. This private context value selects only the corresponding wire
+	// capacity; callers cannot widen a tool response through invocation JSON.
+	return w.Store.Exchange(context.WithValue(ctx, sourceEngineContext{}, r.Engine), r, f, w)
 }

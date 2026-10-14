@@ -4,24 +4,29 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/euler-gaozl/agent-os-runtime/execution"
 )
 
 type Worker struct {
-	Store           Persistence
-	Archives        execution.ArtifactWriter
-	Secrets         SecretReader
-	ID              string
-	Lease           time.Duration
-	ToolHubURL      string
-	RuntimeURL      string
-	SourceHarness   *SourceHarness
-	ResidentHarness *SourceHarness
-	BudgetHarness   *SourceHarness
-	Token           string
-	Poll            time.Duration
+	Store               Persistence
+	Archives            execution.ArtifactWriter
+	Secrets             SecretReader
+	ID                  string
+	Lease               time.Duration
+	ToolHubURL          string
+	RuntimeURL          string
+	SourceHarness       *SourceHarness
+	ResidentHarness     *SourceHarness
+	BudgetHarness       *SourceHarness
+	NativeHarness       *SourceHarness
+	nativeClient        *http.Client
+	nativeIdle          time.Duration
+	nativeFirstResponse time.Duration
+	Token               string
+	Poll                time.Duration
 }
 
 func (w *Worker) Run(ctx context.Context) error {
