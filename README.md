@@ -1,6 +1,6 @@
 # Agent OS Worker
 
-独立的任务调度、模型传输和 DSH 子进程宿主。执行持久化与迁移属于 Runtime，Worker 消费其固定 `runtime-execution-v1` 接口（模块 `v0.1.0-rc.5`），不导入 Runtime 路由、工具效果或迁移实现。
+独立的任务调度、模型传输和 DSH 子进程宿主。执行持久化与迁移属于 Runtime，Worker 消费其固定 `runtime-execution-v1` 接口（模块 `v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b`），不导入 Runtime 路由、工具效果或迁移实现。
 
 ## 执行与多实例
 
@@ -75,3 +75,11 @@ native 候选本地全仓 96 条检查通过、零跳过，包含真实 TLS 大�
 超过 5 MiB 文本、产物篡改拒绝和历史回归。模型/执行账本为明确夹具，不是付费模型、
 实际数据库接管或正式安装证明。独立评审发现的旧状态响应容量和上传无截止问题已修复。
 原始证据由本机 `ops/native-worker.path` 索引，联合进程故障和发布仍待完成。
+
+## Native 模型尝试的约束修订保护
+
+当前编译依赖固定 Runtime 提交 `1f6c4c29c62bac3ad6d674b7797a7410f373bf00`，对应上述 Go pseudo-version。它在新模型尝试前核对冻结意图与当前约束修订；不一致则按普通失败落盘，不新增供应商请求。已完成回执仍可恢复、重放，旧 PlanRevision 不会被更新。本检查不能撤回已获准的在途调用，其账单与回执仍须保留。该行为由 Worker 内嵌的 execution 执行，单独更新 Runtime HTTP 服务不能替代 Worker 升级。
+
+该版本目前是维护者本地固定源码，尚未发布远程 tag 或模块；`go.sum` 由 Go 对精确 Git 提交的合法模块包生成，完整 vendor 随源码保留，不依赖邻近仓库的 replace。升级同时纳入 rc.5 以来已有的只读 continuation preview 和 native/legacy 提交校验代码；execution facade、官方 Harness、SDK rc.3 和其它第三方依赖版本不变。
+
+Mac 开发安装需逐个验证两个可领取任务的 Worker 的实际二进制与编译 pin；不能把 go.mod 更新视为已经部署。Runtime HTTP 可以继续使用兼容的既有 preview 版本，不需要为此迁移数据库。新 continuation 写动作、UI、真实供应商、业务与 Windows 验收仍按主仓完整计划另行记录。
