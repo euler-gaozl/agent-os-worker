@@ -2,7 +2,7 @@
   "format": 1,
   "engine": "dsh-source-687f282e-final-v5",
   "repository": "euler-gaozl/agent-os-harness",
-  "commit": "19e0ceee82cd6f8776cbc5eb97d1a5aab0f7a210",
+  "commit": "78ab3d97da42938dcd24784e334221828997e9cb",
   "tag": "dsh-v0.2.1-rc.2",
   "upstream_commit": "687f282e8625c6b8d11ff58211a90524be2e4317",
   "manifest_sha256": "0bfd7f80e48587148e4cf6e0406c5ee6e2174f06666a58e1e06f3b175ccb6236"
