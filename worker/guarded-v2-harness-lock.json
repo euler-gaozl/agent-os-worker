@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "engine": "dsh-source-687f282e-guarded-v7",
+  "repository": "euler-gaozl/agent-os-harness",
+  "commit": "19e0ceee82cd6f8776cbc5eb97d1a5aab0f7a210",
+  "tag": "dsh-v0.2.1-rc.2",
+  "upstream_commit": "687f282e8625c6b8d11ff58211a90524be2e4317",
+  "manifest_sha256": "825223568a022dec28ff468c80bc91fc94225d54c0525a4b2470e9b25616a6a5"
+}

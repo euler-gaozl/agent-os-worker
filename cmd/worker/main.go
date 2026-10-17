@@ -32,6 +32,7 @@ func main() {
 		client := servicehost.Client()
 		archives := artifactWriter{client, os.Getenv("STORAGE_URL")}
 		var source, resident, budget, native, final, guarded, guardedV6 *worker.SourceHarness
+		var sourceV2, residentV2, budgetV2, nativeV2, finalV2, guardedV2 *worker.SourceHarness
 		var versions []string
 		if entry := os.Getenv("DSH_SOURCE_RUNNER"); entry != "" {
 			var err error
@@ -89,11 +90,59 @@ func main() {
 			}
 			versions = append(versions, worker.EngineDSHGuardedV6)
 		}
+		if entry := os.Getenv("DSH_SOURCE_V2_RUNNER"); entry != "" {
+			var err error
+			sourceV2, err = worker.VerifySourceVersion(entry, worker.EngineDSHSourceV2)
+			if err != nil {
+				return nil, nil, err
+			}
+			versions = append(versions, worker.EngineDSHSourceV2)
+		}
+		if entry := os.Getenv("DSH_RESIDENT_V2_RUNNER"); entry != "" {
+			var err error
+			residentV2, err = worker.VerifySourceVersion(entry, worker.EngineDSHResidentV2)
+			if err != nil {
+				return nil, nil, err
+			}
+			versions = append(versions, worker.EngineDSHResidentV2)
+		}
+		if entry := os.Getenv("DSH_BUDGET_V2_RUNNER"); entry != "" {
+			var err error
+			budgetV2, err = worker.VerifySourceVersion(entry, worker.EngineDSHBudgetV2)
+			if err != nil {
+				return nil, nil, err
+			}
+			versions = append(versions, worker.EngineDSHBudgetV2)
+		}
+		if entry := os.Getenv("DSH_NATIVE_V2_RUNNER"); entry != "" {
+			var err error
+			nativeV2, err = worker.VerifySourceVersion(entry, worker.EngineDSHNativeV2)
+			if err != nil {
+				return nil, nil, err
+			}
+			versions = append(versions, worker.EngineDSHNativeV2)
+		}
+		if entry := os.Getenv("DSH_FINAL_V2_RUNNER"); entry != "" {
+			var err error
+			finalV2, err = worker.VerifySourceVersion(entry, worker.EngineDSHFinalV2)
+			if err != nil {
+				return nil, nil, err
+			}
+			versions = append(versions, worker.EngineDSHFinalV2)
+		}
+		if entry := os.Getenv("DSH_GUARDED_V2_RUNNER"); entry != "" {
+			var err error
+			guardedV2, err = worker.VerifySourceVersion(entry, worker.EngineDSHGuardedV2)
+			if err != nil {
+				return nil, nil, err
+			}
+			versions = append(versions, worker.EngineDSHGuardedV2)
+		}
 		store, err := execution.NewSourceVersions(db, archives, versions)
 		if err != nil {
 			return nil, nil, err
 		}
-		w := &worker.Worker{Store: store, SourceHarness: source, ResidentHarness: resident, BudgetHarness: budget, NativeHarness: native, FinalHarness: final, GuardedHarness: guarded, GuardedV6Harness: guardedV6, RuntimeURL: os.Getenv("RUNTIME_URL"), Archives: archives, Secrets: client, ID: servicehost.Env("INSTANCE_ID", "worker-"+contracts.ID()[:8]), Token: c.Token, ToolHubURL: client.CatalogURL}
+		w := &worker.Worker{Store: store, SourceHarness: source, ResidentHarness: resident, BudgetHarness: budget, NativeHarness: native, FinalHarness: final, GuardedHarness: guarded, GuardedV6Harness: guardedV6, SourceV2Harness: sourceV2, ResidentV2Harness: residentV2, BudgetV2Harness: budgetV2, NativeV2Harness: nativeV2, FinalV2Harness: finalV2, GuardedV2Harness: guardedV2, RuntimeURL: os.Getenv("RUNTIME_URL"), Archives: archives, Secrets: client, ID: servicehost.Env("INSTANCE_ID", "worker-"+contracts.ID()[:8]), Token: c.Token, ToolHubURL: client.CatalogURL}
 		return servicehttp.New(c, db.Ping, func(*http.ServeMux) {}), w.Run, nil
 	})
 }

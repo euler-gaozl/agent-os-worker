@@ -68,6 +68,24 @@ var guardedHarnessLock []byte
 //go:embed guarded-v6-harness-lock.json
 var guardedV6HarnessLock []byte
 
+//go:embed source-v2-harness-lock.json
+var sourceV2HarnessLock []byte
+
+//go:embed resident-v2-harness-lock.json
+var residentV2HarnessLock []byte
+
+//go:embed budget-v2-harness-lock.json
+var budgetV2HarnessLock []byte
+
+//go:embed native-v2-harness-lock.json
+var nativeV2HarnessLock []byte
+
+//go:embed final-v2-harness-lock.json
+var finalV2HarnessLock []byte
+
+//go:embed guarded-v2-harness-lock.json
+var guardedV2HarnessLock []byte
+
 type harnessLock struct {
 	Engine   string `json:"engine"`
 	Upstream string `json:"upstream_commit"`
@@ -121,6 +139,18 @@ func verifySourceVersion(entry, engine string) (*SourceHarness, error) {
 		pin = guardedHarnessLock
 	case EngineDSHGuardedV6:
 		pin = guardedV6HarnessLock
+	case EngineDSHSourceV2:
+		pin = sourceV2HarnessLock
+	case EngineDSHResidentV2:
+		pin = residentV2HarnessLock
+	case EngineDSHBudgetV2:
+		pin = budgetV2HarnessLock
+	case EngineDSHNativeV2:
+		pin = nativeV2HarnessLock
+	case EngineDSHFinalV2:
+		pin = finalV2HarnessLock
+	case EngineDSHGuardedV2:
+		pin = guardedV2HarnessLock
 	default:
 		return nil, errors.New("unsupported source artifact engine")
 	}
@@ -193,6 +223,18 @@ func (w *Worker) sourceForEngine(engine string) (*SourceHarness, error) {
 		selected = w.GuardedHarness
 	case EngineDSHGuardedV6:
 		selected = w.GuardedV6Harness
+	case EngineDSHSourceV2:
+		selected = w.SourceV2Harness
+	case EngineDSHResidentV2:
+		selected = w.ResidentV2Harness
+	case EngineDSHBudgetV2:
+		selected = w.BudgetV2Harness
+	case EngineDSHNativeV2:
+		selected = w.NativeV2Harness
+	case EngineDSHFinalV2:
+		selected = w.FinalV2Harness
+	case EngineDSHGuardedV2:
+		selected = w.GuardedV2Harness
 	default:
 		return nil, errors.New("unsupported source engine")
 	}

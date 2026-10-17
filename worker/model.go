@@ -44,7 +44,7 @@ func ModelRequest(config ModelConfig, messages []Message, tools []Tool) []byte {
 	return JSON(body)
 }
 func (w *Worker) CompleteModel(ctx context.Context, r Run, id string, messages []Message, tools []Tool) (Message, error) {
-	if r.Engine == EngineDSHBudget || isNativeEngine(r.Engine) {
+	if isBudgetEngine(r.Engine) || isNativeEngine(r.Engine) {
 		return Message{}, errors.New("budget engine requires durable model outcome protocol")
 	}
 	cfg := r.Snapshot.Agent.Model
@@ -76,7 +76,7 @@ func (w *Worker) CompleteModel(ctx context.Context, r Run, id string, messages [
 // v3 returns a final request only after a pre-send context rejection or a
 // committed provider receipt. Runtime owns the durable outcome and usage.
 func (w *Worker) CompleteBudgetModel(ctx context.Context, r Run, id string, messages []Message, tools []Tool) (json.RawMessage, error) {
-	if r.Engine != EngineDSHBudget {
+	if !isBudgetEngine(r.Engine) {
 		return nil, errors.New("budget outcome requested for a historical engine")
 	}
 	cfg := r.Snapshot.Agent.Model

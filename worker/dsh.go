@@ -90,7 +90,7 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 	if isSourceEngine(r.Engine) {
 		init["engine"] = r.Engine
 	}
-	if r.Engine == EngineDSHBudget {
+	if isBudgetEngine(r.Engine) {
 		output := r.Snapshot.Agent.Model.MaxTokens
 		if output == 0 {
 			output = 4096
