@@ -163,7 +163,7 @@ func TestSourceStateRetriesUncertainReplyWithSameInvocation(t *testing.T) {
 					t.Fatal("lost reply not recovered", err, calls.Load())
 				}
 			case "unreachable":
-				if !errors.Is(err, ErrUnknown) || calls.Load() != 3 {
+				if !errors.Is(err, ErrUnknown) || calls.Load() != 6 {
 					t.Fatal("unavailable receipt not retained as unknown", err, calls.Load())
 				}
 			case "unauthorized":

@@ -53,7 +53,7 @@ func (w *Worker) SourceState(ctx context.Context, inv Invocation) ([]byte, error
 	if engine, _ := ctx.Value(sourceEngineContext{}).(string); isNativeEngine(engine) {
 		limit = 64 << 20
 	}
-	for attempt := 0; attempt < 3; attempt++ {
+	for attempt := 0; attempt < 6; attempt++ {
 		requestContext, cancel := context.WithTimeout(ctx, 10*time.Second)
 		body, err := internalRequestLimit(requestContext, strings.TrimRight(w.RuntimeURL, "/")+"/v1/source-state", w.Token, inv, limit)
 		cancel()
@@ -70,11 +70,12 @@ func (w *Worker) SourceState(ctx context.Context, inv Invocation) ([]byte, error
 		if errors.Is(err, ErrFence) || errors.Is(err, ErrUnknown) || (errors.As(err, &status) && status.code < 500) {
 			return nil, err
 		}
-		if attempt < 2 {
+		if attempt < 5 {
+			delay := []time.Duration{250 * time.Millisecond, 500 * time.Millisecond, time.Second, 2 * time.Second, 3 * time.Second}[attempt]
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
-			case <-time.After(time.Duration(attempt+1) * 100 * time.Millisecond):
+			case <-time.After(delay):
 			}
 		}
 	}
