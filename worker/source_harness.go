@@ -49,6 +49,9 @@ var finalHarnessLock []byte
 //go:embed guarded-harness-lock.json
 var guardedHarnessLock []byte
 
+//go:embed guarded-v6-harness-lock.json
+var guardedV6HarnessLock []byte
+
 type harnessLock struct {
 	Engine   string `json:"engine"`
 	Upstream string `json:"upstream_commit"`
@@ -81,6 +84,10 @@ func VerifyGuardedHarness(entry string) (*SourceHarness, error) {
 	return verifySourceVersion(entry, EngineDSHGuarded)
 }
 
+func VerifyGuardedV6Harness(entry string) (*SourceHarness, error) {
+	return verifySourceVersion(entry, EngineDSHGuardedV6)
+}
+
 func verifySourceVersion(entry, engine string) (*SourceHarness, error) {
 	var pin []byte
 	switch engine {
@@ -97,7 +104,7 @@ func verifySourceVersion(entry, engine string) (*SourceHarness, error) {
 	case EngineDSHGuarded:
 		pin = guardedHarnessLock
 	case EngineDSHGuardedV6:
-		return nil, errors.New("guarded-v6 runner is not packaged; only terminal history may remain")
+		pin = guardedV6HarnessLock
 	default:
 		return nil, errors.New("unsupported source artifact engine")
 	}
@@ -169,7 +176,7 @@ func (w *Worker) sourceForEngine(engine string) (*SourceHarness, error) {
 	case EngineDSHGuarded:
 		selected = w.GuardedHarness
 	case EngineDSHGuardedV6:
-		return nil, errors.New("guarded-v6 runner is not packaged")
+		selected = w.GuardedV6Harness
 	default:
 		return nil, errors.New("unsupported source engine")
 	}

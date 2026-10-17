@@ -97,7 +97,7 @@ Mac 开发安装需逐个验证两个可领取任务的 Worker 的实际二进�
 
 ## guarded-v7 未就绪成稿单次续接（候选，未安装）
 
-Worker 现在只打包 `dsh-source-639ed015-guarded-v7` 产物，执行依赖固定到 Runtime `934b8561d64ed8c45d2b85b403e5e50f1d2ca33d`（module `v0.1.0-rc.5.0.20261017085721-934b8561d64e`）。v7 在 v6 参数校验/回执成稿之上，允许 Runtime 的一次可修订拒绝进入同一 DSH loop；旧 v6 任务只保留历史回放识别，不再被领取，发布前必须确认没有可恢复 v6 任务。Worker 测试、vet 和包内 Node 冒烟通过；未安装、未做真实供应商验收。
+Worker 现在同时打包 `dsh-source-639ed015-guarded-v7` 与历史 `dsh-source-639ed015-guarded-v6` 产物，执行依赖固定到 Runtime `fb5a5c1017ca0cdbe83ff227cc77742a66ea9c24`（module `v0.1.0-rc.5.0.20261017090737-fb5a5c1017ca`）。v7 在 v6 参数校验/回执成稿之上，允许 Runtime 的一次可修订拒绝进入同一 DSH loop；v6 仅用于恢复历史失败任务，新任务默认 v7。两个引擎都需显式 `DSH_GUARDED_RUNNER` / `DSH_GUARDED_V6_RUNNER`，旧 v6 任务不再丢失恢复能力。Worker 测试、vet 和包内 Node 冒烟通过；未安装、未做真实供应商验收。
 
 ## guarded-v6 参数恢复（历史）
 

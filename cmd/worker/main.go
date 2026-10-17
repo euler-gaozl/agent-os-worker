@@ -31,7 +31,7 @@ func main() {
 		}
 		client := servicehost.Client()
 		archives := artifactWriter{client, os.Getenv("STORAGE_URL")}
-		var source, resident, budget, native, final, guarded *worker.SourceHarness
+		var source, resident, budget, native, final, guarded, guardedV6 *worker.SourceHarness
 		var versions []string
 		if entry := os.Getenv("DSH_SOURCE_RUNNER"); entry != "" {
 			var err error
@@ -81,11 +81,19 @@ func main() {
 			}
 			versions = append(versions, worker.EngineDSHGuarded)
 		}
+		if entry := os.Getenv("DSH_GUARDED_V6_RUNNER"); entry != "" {
+			var err error
+			guardedV6, err = worker.VerifyGuardedV6Harness(entry)
+			if err != nil {
+				return nil, nil, err
+			}
+			versions = append(versions, worker.EngineDSHGuardedV6)
+		}
 		store, err := execution.NewSourceVersions(db, archives, versions)
 		if err != nil {
 			return nil, nil, err
 		}
-		w := &worker.Worker{Store: store, SourceHarness: source, ResidentHarness: resident, BudgetHarness: budget, NativeHarness: native, FinalHarness: final, GuardedHarness: guarded, RuntimeURL: os.Getenv("RUNTIME_URL"), Archives: archives, Secrets: client, ID: servicehost.Env("INSTANCE_ID", "worker-"+contracts.ID()[:8]), Token: c.Token, ToolHubURL: client.CatalogURL}
+		w := &worker.Worker{Store: store, SourceHarness: source, ResidentHarness: resident, BudgetHarness: budget, NativeHarness: native, FinalHarness: final, GuardedHarness: guarded, GuardedV6Harness: guardedV6, RuntimeURL: os.Getenv("RUNTIME_URL"), Archives: archives, Secrets: client, ID: servicehost.Env("INSTANCE_ID", "worker-"+contracts.ID()[:8]), Token: c.Token, ToolHubURL: client.CatalogURL}
 		return servicehttp.New(c, db.Ping, func(*http.ServeMux) {}), w.Run, nil
 	})
 }
