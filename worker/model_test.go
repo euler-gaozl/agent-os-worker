@@ -171,8 +171,7 @@ func TestProviderFailuresAndUnacknowledgedResultsAreNotSuccess(t *testing.T) {
 	}
 }
 
-func TestToolTransportKeepsUnknownFenceAndRedirectBoundaries(t *testing.T) {
-	for _, status := range []int{409, 412, 307} {
+func TestToolTransportKeepsUnknownFenceAndRedirectBoundaries(t *testing.T) {	for _, status := range []int{409, 412, 307} {
 		t.Run(http.StatusText(status), func(t *testing.T) {
 			var redirected atomic.Int32
 			target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { redirected.Add(1) }))
@@ -200,5 +199,25 @@ func TestToolTransportKeepsUnknownFenceAndRedirectBoundaries(t *testing.T) {
 				t.Fatal("service credential followed redirect")
 			}
 		})
+	}
+}
+func TestToolTransportRetries503WithSameInvocation(t *testing.T) {
+	var calls atomic.Int32
+	peer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var got map[string]any
+		if json.NewDecoder(r.Body).Decode(&got) != nil || got["operation_id"] != "fixture/tool/1" {
+			t.Error("bad retried invocation")
+		}
+		if calls.Add(1) == 1 {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer peer.Close()
+	worker := Worker{ToolHubURL: peer.URL, Token: "fixture-token"}
+	body, e := worker.InvokeTool(context.Background(), Invocation{RunID: "fixture", OperationID: "fixture/tool/1"})
+	if e != nil || string(body) != `{"ok":true}` || calls.Load() != 2 {
+		t.Fatal("503 was not retried safely", e, string(body), calls.Load())
 	}
 }

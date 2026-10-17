@@ -40,7 +40,33 @@ func (w *Worker) PutArtifact(ctx context.Context, b []byte, media, root string) 
 	return w.Archives.PutArtifact(ctx, b, media, root)
 }
 func (w *Worker) InvokeTool(ctx context.Context, inv Invocation) ([]byte, error) {
-	return internalRequest(ctx, w.ToolHubURL+"/invoke", w.Token, inv)
+	// ToolHub returns 503 while Runtime is restarting and its local tool
+	// dispatcher is unavailable. The operation ID/fence makes the same
+	// invocation safe to retry; definite fence/unknown/auth errors do not retry.
+	var last error
+	for attempt := 0; attempt < 5; attempt++ {
+		body, err := internalRequest(ctx, w.ToolHubURL+"/invoke", w.Token, inv)
+		if err == nil {
+			return body, nil
+		}
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		var status *serviceResponseError
+		if errors.Is(err, ErrFence) || errors.Is(err, ErrUnknown) || (errors.As(err, &status) && status.code < 500) {
+			return nil, err
+		}
+		last = err
+		if attempt < 4 {
+			delay := []time.Duration{250 * time.Millisecond, 500 * time.Millisecond, time.Second, 2 * time.Second}[attempt]
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+	}
+	return nil, last
 }
 
 // Runtime owns this transaction and the frozen read/rejection/receipt. The
