@@ -44,7 +44,7 @@ func ModelRequest(config ModelConfig, messages []Message, tools []Tool) []byte {
 	return JSON(body)
 }
 func (w *Worker) CompleteModel(ctx context.Context, r Run, id string, messages []Message, tools []Tool) (Message, error) {
-	if r.Engine == EngineDSHBudget || r.Engine == EngineDSHNative {
+	if r.Engine == EngineDSHBudget || isNativeEngine(r.Engine) {
 		return Message{}, errors.New("budget engine requires durable model outcome protocol")
 	}
 	cfg := r.Snapshot.Agent.Model

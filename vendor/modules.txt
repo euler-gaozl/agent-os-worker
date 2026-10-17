@@ -1,8 +1,8 @@
-# github.com/euler-gaozl/agent-os-runtime v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b
+# github.com/euler-gaozl/agent-os-runtime v0.1.0-rc.5.0.20261017052941-7805a48450a6
 ## explicit; go 1.27.0
 github.com/euler-gaozl/agent-os-runtime/execution
 github.com/euler-gaozl/agent-os-runtime/internal/runstate
-# github.com/euler-gaozl/agent-os-sdk v0.1.0-rc.3
+# github.com/euler-gaozl/agent-os-sdk v0.1.0-rc.4
 ## explicit; go 1.27.0
 github.com/euler-gaozl/agent-os-sdk/contracts
 github.com/euler-gaozl/agent-os-sdk/serviceclient

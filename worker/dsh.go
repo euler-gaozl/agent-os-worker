@@ -51,7 +51,7 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 	cmd := exec.CommandContext(ctx, node, "--max-old-space-size=192", entry)
 	if isSourceEngine(r.Engine) {
 		heap := "--max-old-space-size=192"
-		if r.Engine == EngineDSHNative {
+		if isNativeEngine(r.Engine) {
 			heap = "--max-old-space-size=512"
 		}
 		cmd = exec.CommandContext(ctx, node, heap, "--no-global-search-paths", entry)
@@ -97,16 +97,19 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		}
 		init["model_max_tokens"] = output
 	}
-	if r.Engine == EngineDSHNative {
+	if isNativeEngine(r.Engine) {
 		init["model_limits"] = r.Snapshot.Agent.Model.Limits
 		init["model_max_tokens"] = r.Snapshot.Agent.Model.MaxTokens
+	}
+	if r.Engine == EngineDSHFinal && r.Snapshot.Agent.FinalOutput != nil {
+		init["final_output"] = r.Snapshot.Agent.FinalOutput
 	}
 	if _, e = fmt.Fprintln(stdin, string(JSON(init))); e != nil {
 		return e
 	}
 	scanner := bufio.NewScanner(stdout)
 	frameLimit := 32 << 20
-	if r.Engine == EngineDSHNative {
+	if isNativeEngine(r.Engine) {
 		frameLimit = 128 << 20
 	}
 	scanner.Buffer(make([]byte, 65536), frameLimit)

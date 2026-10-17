@@ -1,8 +1,14 @@
 {
   "format": 1,
   "role": "worker",
-  "continuation_management": {"format": 1, "provides": "native-model-revision-guard-v1"},
-  "execution_access": {"format": 1, "profile": "worker-minimal-v1"},
+  "continuation_management": {
+    "format": 1,
+    "provides": "native-model-revision-guard-v1"
+  },
+  "execution_access": {
+    "format": 1,
+    "profile": "worker-minimal-v1"
+  },
   "schema": "public",
   "migration_owner": "runtime",
   "backward_compatible": true,
@@ -42,5 +48,8 @@
     "data": "execution-v0.7-working-state",
     "http": "agentos-http-v0.7-source-state-v1",
     "source_management_protocol": "source-state-recovery-v1"
-  }
+  },
+  "final_engine_candidate": "dsh-source-639ed015-final-v5",
+  "final_output_protocol": 1,
+  "final_activation_condition": "Separately pinned DSH_FINAL_RUNNER, matching Runtime execution, immutable final_output policy, managed release/rollback compatibility and joint fault acceptance required."
 }

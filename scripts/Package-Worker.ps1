@@ -7,6 +7,7 @@ param(
  [string]$ResidentArtifact='',
  [string]$BudgetArtifact='',
  [string]$NativeArtifact='',
+ [string]$FinalArtifact='',
  [switch]$Offline
 )
 $ErrorActionPreference='Stop'
@@ -63,7 +64,8 @@ foreach($selection in @(
  @{artifact=$SourceArtifact;lock='source-harness-lock.json';directory='source-harness';engine='dsh-source-639ed015-state-v1'},
  @{artifact=$ResidentArtifact;lock='resident-harness-lock.json';directory='resident-harness';engine='dsh-source-639ed015-resident-v2'},
  @{artifact=$BudgetArtifact;lock='budget-harness-lock.json';directory='budget-harness';engine='dsh-source-639ed015-budget-v3'},
- @{artifact=$NativeArtifact;lock='native-harness-lock.json';directory='native-harness';engine='dsh-source-639ed015-native-v4'}
+ @{artifact=$NativeArtifact;lock='native-harness-lock.json';directory='native-harness';engine='dsh-source-639ed015-native-v4'},
+ @{artifact=$FinalArtifact;lock='final-harness-lock.json';directory='final-harness';engine='dsh-source-639ed015-final-v5'}
 )){
  if(-not $selection.artifact){continue}
  $artifact=(Resolve-Path -LiteralPath $selection.artifact).Path
@@ -101,6 +103,7 @@ if($ResidentArtifact){$manifest.resident_engine='dsh-source-639ed015-resident-v2
 if($BudgetArtifact){$manifest.budget_engine='dsh-source-639ed015-budget-v3';$manifest.budget_activation='Opt-in DSH_BUDGET_RUNNER=<package>/budget-harness/source-runner.mjs; requires explicit release/rollback support for durable model receipt protocol 1.'}
 $manifest.source_engines=$sourceEngines
 if($NativeArtifact){$manifest.native_engine='dsh-source-639ed015-native-v4';$manifest.native_activation='Opt-in DSH_NATIVE_RUNNER=<package>/native-harness/source-runner.mjs; requires native model receipt protocol 2 and compatible managed release gates.'}
+if($FinalArtifact){$manifest.final_engine='dsh-source-639ed015-final-v5';$manifest.final_activation='Opt-in DSH_FINAL_RUNNER=<package>/final-harness/source-runner.mjs; requires frozen final_output policy, finalization protocol 1 and compatible release/rollback gates.'}
 if(@(& git -C $root status --porcelain).Count -or (& git -C $root rev-parse HEAD).Trim() -cne $commit){throw 'Source changed during packaging.'}
 $manifest|ConvertTo-Json -Depth 6|Set-Content -LiteralPath (Join-Path $target 'package.json')
 Write-Output ('Complete Worker package: '+$target)

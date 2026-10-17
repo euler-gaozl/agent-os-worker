@@ -43,7 +43,7 @@ func (r nativeProgressReader) Read(p []byte) (int, error) {
 // This method only transports a frozen intent and records the provider result.
 // Runtime independently derives and freezes the format-2 Harness outcome.
 func (w *Worker) CompleteNativeModel(ctx context.Context, r Run, id string, messages []Message, tools []Tool) (json.RawMessage, error) {
-	if r.Engine != EngineDSHNative {
+	if !isNativeEngine(r.Engine) {
 		return nil, errors.New("native model protocol requires native engine")
 	}
 	cfg := r.Snapshot.Agent.Model

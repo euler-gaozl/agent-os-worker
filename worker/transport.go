@@ -50,7 +50,7 @@ func (w *Worker) SourceState(ctx context.Context, inv Invocation) ([]byte, error
 		return nil, errors.New("Runtime endpoint required for source state")
 	}
 	limit := int64(4 << 20)
-	if ctx.Value(sourceEngineContext{}) == EngineDSHNative {
+	if engine, _ := ctx.Value(sourceEngineContext{}).(string); isNativeEngine(engine) {
 		limit = 64 << 20
 	}
 	for attempt := 0; attempt < 3; attempt++ {
