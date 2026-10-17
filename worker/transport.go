@@ -44,7 +44,7 @@ func (w *Worker) InvokeTool(ctx context.Context, inv Invocation) ([]byte, error)
 	// dispatcher is unavailable. The operation ID/fence makes the same
 	// invocation safe to retry; definite fence/unknown/auth errors do not retry.
 	var last error
-	for attempt := 0; attempt < 10; attempt++ {
+	for attempt := 0; attempt < 24; attempt++ {
 		body, err := internalRequest(ctx, w.ToolHubURL+"/invoke", w.Token, inv)
 		if err == nil {
 			return body, nil
@@ -57,8 +57,18 @@ func (w *Worker) InvokeTool(ctx context.Context, inv Invocation) ([]byte, error)
 			return nil, err
 		}
 		last = err
-		if attempt < 9 {
-			delay := []time.Duration{250 * time.Millisecond, 500 * time.Millisecond, time.Second, 2 * time.Second, 3 * time.Second, 3 * time.Second, 3 * time.Second, 3 * time.Second, 3 * time.Second}[attempt]
+		if attempt < 23 {
+			delay := 3 * time.Second
+			switch attempt {
+			case 0:
+				delay = 250 * time.Millisecond
+			case 1:
+				delay = 500 * time.Millisecond
+			case 2:
+				delay = time.Second
+			case 3:
+				delay = 2 * time.Second
+			}
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
