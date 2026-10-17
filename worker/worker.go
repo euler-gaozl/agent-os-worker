@@ -23,6 +23,7 @@ type Worker struct {
 	BudgetHarness       *SourceHarness
 	NativeHarness       *SourceHarness
 	FinalHarness        *SourceHarness
+	GuardedHarness      *SourceHarness
 	nativeClient        *http.Client
 	nativeIdle          time.Duration
 	nativeFirstResponse time.Duration

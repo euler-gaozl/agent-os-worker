@@ -8,6 +8,7 @@ param(
  [string]$BudgetArtifact='',
  [string]$NativeArtifact='',
  [string]$FinalArtifact='',
+ [string]$GuardedArtifact='',
  [switch]$Offline
 )
 $ErrorActionPreference='Stop'
@@ -65,7 +66,8 @@ foreach($selection in @(
  @{artifact=$ResidentArtifact;lock='resident-harness-lock.json';directory='resident-harness';engine='dsh-source-639ed015-resident-v2'},
  @{artifact=$BudgetArtifact;lock='budget-harness-lock.json';directory='budget-harness';engine='dsh-source-639ed015-budget-v3'},
  @{artifact=$NativeArtifact;lock='native-harness-lock.json';directory='native-harness';engine='dsh-source-639ed015-native-v4'},
- @{artifact=$FinalArtifact;lock='final-harness-lock.json';directory='final-harness';engine='dsh-source-639ed015-final-v5'}
+ @{artifact=$FinalArtifact;lock='final-harness-lock.json';directory='final-harness';engine='dsh-source-639ed015-final-v5'},
+ @{artifact=$GuardedArtifact;lock='guarded-harness-lock.json';directory='guarded-harness';engine='dsh-source-639ed015-guarded-v6'}
 )){
  if(-not $selection.artifact){continue}
  $artifact=(Resolve-Path -LiteralPath $selection.artifact).Path
@@ -101,6 +103,7 @@ $manifest=@{format=1;role='worker';source_commit=$commit;node_version=$version;p
 if($SourceArtifact){$manifest.source_engine='dsh-source-639ed015-state-v1';$manifest.source_activation='Opt-in DSH_SOURCE_RUNNER=<package>/source-harness/source-runner.mjs; compiled digest verified before claiming.'}
 if($ResidentArtifact){$manifest.resident_engine='dsh-source-639ed015-resident-v2';$manifest.resident_activation='Opt-in DSH_RESIDENT_RUNNER=<package>/resident-harness/source-runner.mjs; requires Runtime with explicit resident-v2 support.'}
 if($BudgetArtifact){$manifest.budget_engine='dsh-source-639ed015-budget-v3';$manifest.budget_activation='Opt-in DSH_BUDGET_RUNNER=<package>/budget-harness/source-runner.mjs; requires explicit release/rollback support for durable model receipt protocol 1.'}
+if($GuardedArtifact){$manifest.guarded_engine='dsh-source-639ed015-guarded-v6';$manifest.guarded_activation='Explicit DSH_GUARDED_RUNNER, protocol 1 input validation and matching Runtime/release gates required.'}
 $manifest.source_engines=$sourceEngines
 if($NativeArtifact){$manifest.native_engine='dsh-source-639ed015-native-v4';$manifest.native_activation='Opt-in DSH_NATIVE_RUNNER=<package>/native-harness/source-runner.mjs; requires native model receipt protocol 2 and compatible managed release gates.'}
 if($FinalArtifact){$manifest.final_engine='dsh-source-639ed015-final-v5';$manifest.final_activation='Opt-in DSH_FINAL_RUNNER=<package>/final-harness/source-runner.mjs; requires frozen final_output policy, finalization protocol 1 and compatible release/rollback gates.'}

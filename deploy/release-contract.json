@@ -51,5 +51,7 @@
   },
   "final_engine_candidate": "dsh-source-639ed015-final-v5",
   "final_output_protocol": 1,
-  "final_activation_condition": "Separately pinned DSH_FINAL_RUNNER, matching Runtime execution, immutable final_output policy, managed release/rollback compatibility and joint fault acceptance required."
+  "final_activation_condition": "Separately pinned DSH_FINAL_RUNNER, matching Runtime execution, immutable final_output policy, managed release/rollback compatibility and joint fault acceptance required.",
+  "guarded_engine_candidate": "dsh-source-639ed015-guarded-v6",
+  "tool_input_protocol": 1
 }

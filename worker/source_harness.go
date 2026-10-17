@@ -19,8 +19,11 @@ const EngineDSHResident = execution.EngineDSHResident
 const EngineDSHBudget = execution.EngineDSHBudget
 const EngineDSHNative = execution.EngineDSHNative
 const EngineDSHFinal = execution.EngineDSHFinal
+const EngineDSHGuarded = execution.EngineDSHGuarded
 
-func isNativeEngine(engine string) bool { return engine == EngineDSHNative || engine == EngineDSHFinal }
+func isNativeEngine(engine string) bool {
+	return engine == EngineDSHNative || execution.IsFinalEngine(engine)
+}
 
 func isSourceEngine(engine string) bool { return execution.IsSourceEngine(engine) }
 
@@ -41,6 +44,9 @@ var nativeHarnessLock []byte
 
 //go:embed final-harness-lock.json
 var finalHarnessLock []byte
+
+//go:embed guarded-harness-lock.json
+var guardedHarnessLock []byte
 
 type harnessLock struct {
 	Engine   string `json:"engine"`
@@ -70,6 +76,10 @@ func VerifyFinalHarness(entry string) (*SourceHarness, error) {
 	return verifySourceVersion(entry, EngineDSHFinal)
 }
 
+func VerifyGuardedHarness(entry string) (*SourceHarness, error) {
+	return verifySourceVersion(entry, EngineDSHGuarded)
+}
+
 func verifySourceVersion(entry, engine string) (*SourceHarness, error) {
 	var pin []byte
 	switch engine {
@@ -83,6 +93,8 @@ func verifySourceVersion(entry, engine string) (*SourceHarness, error) {
 		pin = nativeHarnessLock
 	case EngineDSHFinal:
 		pin = finalHarnessLock
+	case EngineDSHGuarded:
+		pin = guardedHarnessLock
 	default:
 		return nil, errors.New("unsupported source artifact engine")
 	}
@@ -151,6 +163,8 @@ func (w *Worker) sourceForEngine(engine string) (*SourceHarness, error) {
 		selected = w.NativeHarness
 	case EngineDSHFinal:
 		selected = w.FinalHarness
+	case EngineDSHGuarded:
+		selected = w.GuardedHarness
 	default:
 		return nil, errors.New("unsupported source engine")
 	}

@@ -101,7 +101,7 @@ func (w *Worker) driveDSH(ctx context.Context, r *Run) error {
 		init["model_limits"] = r.Snapshot.Agent.Model.Limits
 		init["model_max_tokens"] = r.Snapshot.Agent.Model.MaxTokens
 	}
-	if r.Engine == EngineDSHFinal && r.Snapshot.Agent.FinalOutput != nil {
+	if execution.IsFinalEngine(r.Engine) && r.Snapshot.Agent.FinalOutput != nil {
 		init["final_output"] = r.Snapshot.Agent.FinalOutput
 	}
 	if _, e = fmt.Fprintln(stdin, string(JSON(init))); e != nil {

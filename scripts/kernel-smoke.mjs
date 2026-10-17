@@ -42,13 +42,14 @@ const sources={
   'dsh-source-639ed015-budget-v3':'budget-harness',
   'dsh-source-639ed015-native-v4':'native-harness',
   'dsh-source-639ed015-final-v5':'final-harness',
+  'dsh-source-639ed015-guarded-v6':'guarded-harness',
 };
 for(const engine of manifest.source_engines??[]){
   assert.ok(sources[engine],'unknown packaged source engine');
   const entry=path.join(root,sources[engine],'source-runner.mjs');
   const budget=engine==='dsh-source-639ed015-budget-v3';
-  const final=engine==='dsh-source-639ed015-final-v5';
-  const native=['dsh-source-639ed015-native-v4','dsh-source-639ed015-final-v5'].includes(engine);
+  const final=['dsh-source-639ed015-final-v5','dsh-source-639ed015-guarded-v6'].includes(engine);
+  const native=engine==='dsh-source-639ed015-native-v4'||final;
   await new Promise((resolve,reject)=>{
     const env=Object.fromEntries(['PATH','SystemRoot','WINDIR','TEMP','TMP','LANG'].filter(k=>process.env[k]).map(k=>[k,process.env[k]]));
     const child=spawn(process.execPath,['--no-global-search-paths',native?'--max-old-space-size=512':'--max-old-space-size=192',entry],{cwd:path.dirname(entry),env,stdio:['pipe','pipe','pipe'],windowsHide:true});

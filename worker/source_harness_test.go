@@ -32,6 +32,9 @@ func sourceArtifactVersion(t *testing.T, version string) string {
 	if version == EngineDSHFinal {
 		entry = os.Getenv("TEST_FINAL_DSH_RUNNER")
 	}
+	if version == EngineDSHGuarded {
+		entry = os.Getenv("TEST_GUARDED_DSH_RUNNER")
+	}
 	if entry == "" {
 		if os.Getenv("AGENTOS_REQUIRE_SOURCE") == "1" {
 			t.Fatal("pinned source artifact required")
