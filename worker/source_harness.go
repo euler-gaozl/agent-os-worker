@@ -20,6 +20,7 @@ const EngineDSHBudget = execution.EngineDSHBudget
 const EngineDSHNative = execution.EngineDSHNative
 const EngineDSHFinal = execution.EngineDSHFinal
 const EngineDSHGuarded = execution.EngineDSHGuarded
+const EngineDSHGuardedV6 = execution.EngineDSHGuardedV6
 
 func isNativeEngine(engine string) bool {
 	return engine == EngineDSHNative || execution.IsFinalEngine(engine)
@@ -95,6 +96,8 @@ func verifySourceVersion(entry, engine string) (*SourceHarness, error) {
 		pin = finalHarnessLock
 	case EngineDSHGuarded:
 		pin = guardedHarnessLock
+	case EngineDSHGuardedV6:
+		return nil, errors.New("guarded-v6 runner is not packaged; only terminal history may remain")
 	default:
 		return nil, errors.New("unsupported source artifact engine")
 	}
@@ -165,6 +168,8 @@ func (w *Worker) sourceForEngine(engine string) (*SourceHarness, error) {
 		selected = w.FinalHarness
 	case EngineDSHGuarded:
 		selected = w.GuardedHarness
+	case EngineDSHGuardedV6:
+		return nil, errors.New("guarded-v6 runner is not packaged")
 	default:
 		return nil, errors.New("unsupported source engine")
 	}

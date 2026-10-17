@@ -42,13 +42,13 @@ const sources={
   'dsh-source-639ed015-budget-v3':'budget-harness',
   'dsh-source-639ed015-native-v4':'native-harness',
   'dsh-source-639ed015-final-v5':'final-harness',
-  'dsh-source-639ed015-guarded-v6':'guarded-harness',
+  'dsh-source-639ed015-guarded-v7':'guarded-harness',
 };
 for(const engine of manifest.source_engines??[]){
   assert.ok(sources[engine],'unknown packaged source engine');
   const entry=path.join(root,sources[engine],'source-runner.mjs');
   const budget=engine==='dsh-source-639ed015-budget-v3';
-  const final=['dsh-source-639ed015-final-v5','dsh-source-639ed015-guarded-v6'].includes(engine);
+  const final=['dsh-source-639ed015-final-v5','dsh-source-639ed015-guarded-v7'].includes(engine);
   const native=engine==='dsh-source-639ed015-native-v4'||final;
   await new Promise((resolve,reject)=>{
     const env=Object.fromEntries(['PATH','SystemRoot','WINDIR','TEMP','TMP','LANG'].filter(k=>process.env[k]).map(k=>[k,process.env[k]]));

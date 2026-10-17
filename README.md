@@ -95,6 +95,10 @@ Mac 开发安装需逐个验证两个可领取任务的 Worker 的实际二进�
 
 发布契约新增 `continuation_management` 的 `native-model-revision-guard-v1` 能力。`source-provenance.json` 已修正为实际编译使用的 Runtime execution `v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b`，与 go.mod、go.sum 和 vendor 一致；这次没有再次改变执行依赖。平台在启用接续 Runtime 前检查全部在运行的 Worker，启用后拒绝回滚到缺少守卫的 Worker。历史引擎与回放协议保持原版本。声明与源码检查不是 Windows 安装或真实模型验收，实际部署结果由集成仓记录。
 
-## guarded-v6 参数恢复
+## guarded-v7 未就绪成稿单次续接（候选，未安装）
+
+Worker 现在只打包 `dsh-source-639ed015-guarded-v7` 产物，执行依赖固定到 Runtime `934b8561d64ed8c45d2b85b403e5e50f1d2ca33d`（module `v0.1.0-rc.5.0.20261017085721-934b8561d64e`）。v7 在 v6 参数校验/回执成稿之上，允许 Runtime 的一次可修订拒绝进入同一 DSH loop；旧 v6 任务只保留历史回放识别，不再被领取，发布前必须确认没有可恢复 v6 任务。Worker 测试、vet 和包内 Node 冒烟通过；未安装、未做真实供应商验收。
+
+## guarded-v6 参数恢复（历史）
 
 独立固定 DSH guarded-v6 产物及 Runtime execution 6774494；通过 DSH_GUARDED_RUNNER 显式启用。工具参数在执行前验证，错误作为模型可纠正反馈，原生模型输入输出能力保持。v1–v5 原产物和回放行为保留。69 项相关 Worker 测试零跳过；真实 Worker/Node/Runtime HTTP/隔离 PostgreSQL 的 9 个场景通过（合成 TLS 模型，包含错误参数纠正、进程接管、SQL 中断、取消与 503 续跑），不等于真实供应商内容验收。

@@ -1,75 +1,75 @@
 {
-  "format": 1,
-  "extracted_from": {
-    "repository": "euler-gaozl/agent-os",
-    "commit": "752c9081f05733365f46594bd7581ec55b4ad875"
-  },
-  "sdk": {
-    "version": "v0.1.0-rc.4",
-    "module_sum": "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
-    "zip_sha256": "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
-    "commit": "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
-    "module": "github.com/euler-gaozl/agent-os-sdk"
-  },
-  "distribution": "Canonical Go module generated from a Git mirror at the exact GitHub-verified commit; narrow committed vendor, no local replace. Public proxy was unavailable; no third-party checksum exemptions.",
-  "owner_modules": [
-    {
-      "module": "github.com/euler-gaozl/agent-os-runtime",
-      "version": "v0.1.0-rc.5.0.20261017073920-6774494b61ec",
-      "commit": "6774494b61ec35d79852f0148b590a4c64f18365",
-      "module_sum": "h1:tAiBC9+2e+DUuz04RuVzSZk3rIzWbQJiXHM4B+aCBvA=",
-      "go_mod_sum": "h1:FGT+LijN16Y7wtJwBy2qB07OtfQXi+/4wuf2xG9bQQw=",
-      "protocol": "runtime-execution-v1",
-      "package": "execution"
-    }
-  ],
-  "source_harness": {
-    "format": 1,
-    "engine": "dsh-source-639ed015-state-v1",
-    "repository": "euler-gaozl/agent-os-harness",
-    "commit": "ec21432a91ad1b5b8081aed6aea854363080a6b7",
-    "tag": "v0.1.0-rc.1",
-    "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
-    "manifest_sha256": "03bdd3436d5d0b5395002b13ecc8e6f37c6fa7b4a7afb18d0af4131aacdecffc"
-  },
-  "resident_harness": {
-    "format": 1,
-    "engine": "dsh-source-639ed015-resident-v2",
-    "repository": "euler-gaozl/agent-os-harness",
-    "commit": "439b9086155383a4b4cb19c261ac6690ab02a352",
-    "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
-    "manifest_sha256": "c48cb0675e30d4be6fc00d42a4f6ebff78487ac36eef54761991b197ee139ba4"
-  },
-  "budget_harness": {
-    "format": 1,
-    "engine": "dsh-source-639ed015-budget-v3",
-    "repository": "euler-gaozl/agent-os-harness",
-    "commit": "437bb440a849ecfc49971f7fa96afe9fb4f7aa29",
-    "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
-    "manifest_sha256": "b28323de11cd1bd51f3cdd5fe087bd8806b307fac526a28da25526c330100e4a"
-  },
-  "native_harness": {
-    "format": 1,
-    "engine": "dsh-source-639ed015-native-v4",
-    "repository": "euler-gaozl/agent-os-harness",
-    "commit": "a8a18e41de719901dbef4513faf898af95822d7a",
-    "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
-    "manifest_sha256": "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f"
-  },
-  "final_harness": {
-    "format": 1,
-    "engine": "dsh-source-639ed015-final-v5",
-    "repository": "euler-gaozl/agent-os-harness",
-    "commit": "696c01972afbf73f5ce21947f16253913070323d",
-    "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
-    "manifest_sha256": "f91f91460c4debebb0131588c284a51545974224e7087832942ada769cf2575f"
-  },
-  "guarded_harness": {
-    "format": 1,
-    "engine": "dsh-source-639ed015-guarded-v6",
-    "repository": "euler-gaozl/agent-os-harness",
-    "commit": "47522dfdd02436d5f6528831fe7a2c1fcab5a37c",
-    "upstream_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
-    "manifest_sha256": "3f4e060026c61d0ef907fdd46ecdf370ab96c28050b254b66134fccbe0566142"
-  }
+    "format":  1,
+    "extracted_from":  {
+                           "repository":  "euler-gaozl/agent-os",
+                           "commit":  "752c9081f05733365f46594bd7581ec55b4ad875"
+                       },
+    "sdk":  {
+                "version":  "v0.1.0-rc.4",
+                "module_sum":  "h1:bzAa7Zt82pETqEcifNMqP5qMO3BdpKPEoHZGOo9vOM4=",
+                "zip_sha256":  "f3301da68a7b9493cf6e53ee7b5f909384096d92494ed70815fd1eaf4cd1ef8d",
+                "commit":  "4022ca5e86168b1d5f748b72a8483cd7ff5a73e8",
+                "module":  "github.com/euler-gaozl/agent-os-sdk"
+            },
+    "distribution":  "Canonical Go module generated from a Git mirror at the exact GitHub-verified commit; narrow committed vendor, no local replace. Public proxy was unavailable; no third-party checksum exemptions.",
+    "owner_modules":  [
+                          {
+                              "module":  "github.com/euler-gaozl/agent-os-runtime",
+                              "version":  "v0.1.0-rc.5.0.20261017085721-934b8561d64e",
+                              "commit":  "934b8561d64ed8c45d2b85b403e5e50f1d2ca33d",
+                              "module_sum":  "h1:vO9xEUQdJPp7VOT5T8UiL1TrnBlOPNGsgglQ2/I8EnQ=",
+                              "go_mod_sum":  "h1:FGT+LijN16Y7wtJwBy2qB07OtfQXi+/4wuf2xG9bQQw=",
+                              "protocol":  "runtime-execution-v1",
+                              "package":  "execution"
+                          }
+                      ],
+    "source_harness":  {
+                           "format":  1,
+                           "engine":  "dsh-source-639ed015-state-v1",
+                           "repository":  "euler-gaozl/agent-os-harness",
+                           "commit":  "ec21432a91ad1b5b8081aed6aea854363080a6b7",
+                           "tag":  "v0.1.0-rc.1",
+                           "upstream_commit":  "639ed015397290b3745d163aafe02ffee4aa3f84",
+                           "manifest_sha256":  "03bdd3436d5d0b5395002b13ecc8e6f37c6fa7b4a7afb18d0af4131aacdecffc"
+                       },
+    "resident_harness":  {
+                             "format":  1,
+                             "engine":  "dsh-source-639ed015-resident-v2",
+                             "repository":  "euler-gaozl/agent-os-harness",
+                             "commit":  "439b9086155383a4b4cb19c261ac6690ab02a352",
+                             "upstream_commit":  "639ed015397290b3745d163aafe02ffee4aa3f84",
+                             "manifest_sha256":  "c48cb0675e30d4be6fc00d42a4f6ebff78487ac36eef54761991b197ee139ba4"
+                         },
+    "budget_harness":  {
+                           "format":  1,
+                           "engine":  "dsh-source-639ed015-budget-v3",
+                           "repository":  "euler-gaozl/agent-os-harness",
+                           "commit":  "437bb440a849ecfc49971f7fa96afe9fb4f7aa29",
+                           "upstream_commit":  "639ed015397290b3745d163aafe02ffee4aa3f84",
+                           "manifest_sha256":  "b28323de11cd1bd51f3cdd5fe087bd8806b307fac526a28da25526c330100e4a"
+                       },
+    "native_harness":  {
+                           "format":  1,
+                           "engine":  "dsh-source-639ed015-native-v4",
+                           "repository":  "euler-gaozl/agent-os-harness",
+                           "commit":  "a8a18e41de719901dbef4513faf898af95822d7a",
+                           "upstream_commit":  "639ed015397290b3745d163aafe02ffee4aa3f84",
+                           "manifest_sha256":  "d76588bae0edd1d7f13cdb4d01423ac8fc14da240fba682bcec4a1fb08f8ba7f"
+                       },
+    "final_harness":  {
+                          "format":  1,
+                          "engine":  "dsh-source-639ed015-final-v5",
+                          "repository":  "euler-gaozl/agent-os-harness",
+                          "commit":  "696c01972afbf73f5ce21947f16253913070323d",
+                          "upstream_commit":  "639ed015397290b3745d163aafe02ffee4aa3f84",
+                          "manifest_sha256":  "f91f91460c4debebb0131588c284a51545974224e7087832942ada769cf2575f"
+                      },
+    "guarded_harness":  {
+                            "format":  1,
+                            "engine":  "dsh-source-639ed015-guarded-v7",
+                            "repository":  "euler-gaozl/agent-os-harness",
+                            "commit":  "c5d4e4e2d5d159557d3bb77b8bf895ee0597bda1",
+                            "upstream_commit":  "639ed015397290b3745d163aafe02ffee4aa3f84",
+                            "manifest_sha256":  "fc69b7137917cb6b67eee104659d1bac31becf3c956c8ef79d458e08e6c0d114"
+                        }
 }
