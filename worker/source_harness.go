@@ -21,12 +21,28 @@ const EngineDSHNative = execution.EngineDSHNative
 const EngineDSHFinal = execution.EngineDSHFinal
 const EngineDSHGuarded = execution.EngineDSHGuarded
 const EngineDSHGuardedV6 = execution.EngineDSHGuardedV6
+const EngineDSHSourceV2 = "dsh-source-687f282e-state-v1"
+const EngineDSHResidentV2 = "dsh-source-687f282e-resident-v2"
+const EngineDSHBudgetV2 = "dsh-source-687f282e-budget-v3"
+const EngineDSHNativeV2 = "dsh-source-687f282e-native-v4"
+const EngineDSHFinalV2 = "dsh-source-687f282e-final-v5"
+const EngineDSHGuardedV2 = "dsh-source-687f282e-guarded-v7"
 
 func isNativeEngine(engine string) bool {
-	return engine == EngineDSHNative || execution.IsFinalEngine(engine)
+	return engine == EngineDSHNative || engine == EngineDSHNativeV2 || execution.IsFinalEngine(engine)
+}
+
+func isBudgetEngine(engine string) bool {
+	return engine == EngineDSHBudget || engine == EngineDSHBudgetV2
 }
 
 func isSourceEngine(engine string) bool { return execution.IsSourceEngine(engine) }
+
+// VerifySourceVersion is used by the process bootstrap for both the historical
+// and current upstream engine sets.
+func VerifySourceVersion(entry, engine string) (*SourceHarness, error) {
+	return verifySourceVersion(entry, engine)
+}
 
 // The compiled lock is the trust anchor. An adjacent, editable manifest alone
 // must never authorize a different runner for the same replay engine.

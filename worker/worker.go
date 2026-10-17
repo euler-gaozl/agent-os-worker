@@ -25,6 +25,12 @@ type Worker struct {
 	FinalHarness        *SourceHarness
 	GuardedHarness      *SourceHarness
 	GuardedV6Harness    *SourceHarness
+	SourceV2Harness     *SourceHarness
+	ResidentV2Harness   *SourceHarness
+	BudgetV2Harness     *SourceHarness
+	NativeV2Harness     *SourceHarness
+	FinalV2Harness      *SourceHarness
+	GuardedV2Harness    *SourceHarness
 	nativeClient        *http.Client
 	nativeIdle          time.Duration
 	nativeFirstResponse time.Duration
