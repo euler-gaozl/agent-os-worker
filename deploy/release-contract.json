@@ -1,6 +1,7 @@
 {
   "format": 1,
   "role": "worker",
+  "continuation_management": {"format": 1, "provides": "native-model-revision-guard-v1"},
   "execution_access": {"format": 1, "profile": "worker-minimal-v1"},
   "schema": "public",
   "migration_owner": "runtime",

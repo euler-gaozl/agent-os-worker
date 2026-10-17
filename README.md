@@ -83,3 +83,6 @@ native 候选本地全仓 96 条检查通过、零跳过，包含真实 TLS 大�
 该版本目前是维护者本地固定源码，尚未发布远程 tag 或模块；`go.sum` 由 Go 对精确 Git 提交的合法模块包生成，完整 vendor 随源码保留，不依赖邻近仓库的 replace。升级同时纳入 rc.5 以来已有的只读 continuation preview 和 native/legacy 提交校验代码；execution facade、官方 Harness、SDK rc.3 和其它第三方依赖版本不变。
 
 Mac 开发安装需逐个验证两个可领取任务的 Worker 的实际二进制与编译 pin；不能把 go.mod 更新视为已经部署。Runtime HTTP 可以继续使用兼容的既有 preview 版本，不需要为此迁移数据库。新 continuation 写动作、UI、真实供应商、业务与 Windows 验收仍按主仓完整计划另行记录。
+## Windows 接续发布兼容（2026-10-17）
+
+发布契约新增 `continuation_management` 的 `native-model-revision-guard-v1` 能力。`source-provenance.json` 已修正为实际编译使用的 Runtime execution `v0.1.0-rc.5.0.20261015080014-1f6c4c29c62b`，与 go.mod、go.sum 和 vendor 一致；这次没有再次改变执行依赖。平台在启用接续 Runtime 前检查全部在运行的 Worker，启用后拒绝回滚到缺少守卫的 Worker。历史引擎与回放协议保持原版本。声明与源码检查不是 Windows 安装或真实模型验收，实际部署结果由集成仓记录。
