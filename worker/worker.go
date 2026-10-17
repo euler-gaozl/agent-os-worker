@@ -94,9 +94,20 @@ func (w *Worker) execute(parent context.Context, r Run) {
 	if parent.Err() != nil {
 		return
 	}
+	if runtimeUnavailable(err) {
+		// Preserve the durable run for lease-expiry takeover instead of freezing
+		// a transient Runtime outage as a business failure.
+		slog.Warn("execution requeued after runtime unavailable", "run", r.ID)
+		return
+	}
 	if e := w.Store.CheckpointFailure(parent, r, err); e != nil {
 		slog.Warn("execution checkpoint refused", "run", r.ID)
 	}
+}
+
+func runtimeUnavailable(err error) bool {
+	var status *serviceResponseError
+	return errors.As(err, &status) && status.code == http.StatusServiceUnavailable
 }
 
 func truncateUTF8(s string, n int) string {

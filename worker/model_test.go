@@ -221,3 +221,14 @@ func TestToolTransportRetries503WithSameInvocation(t *testing.T) {
 		t.Fatal("503 was not retried safely", e, string(body), calls.Load())
 	}
 }
+func TestRuntimeUnavailableOnly503(t *testing.T) {
+	if !runtimeUnavailable(&serviceResponseError{code: 503}) {
+		t.Fatal("503 must be requeueable")
+	}
+	if runtimeUnavailable(&serviceResponseError{code: 400}) {
+		t.Fatal("400 must remain a definite failure")
+	}
+	if runtimeUnavailable(errors.New("transport")) {
+		t.Fatal("plain transport error must not be silently requeued")
+	}
+}
